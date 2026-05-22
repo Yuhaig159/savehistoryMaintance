@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent Nhập Liệu Bảo Dưỡng Siêu Tốc</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 40px; background: #f4f6f9; }
+        .container { max-width: 800px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #1f4e78; }
+        textarea { width: 100%; height: 200px; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #1f4e78; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #2f5597; }
+        #status { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🤖 Đội Xe Nội Bộ (70 Xe) - Agent Tiếp Nhận Hóa Đơn Bảo Dưỡng</h2>
+    <p>Thả file hóa đơn, ảnh chụp hoặc copy toàn bộ đoạn văn bản (Text) từ hóa đơn điện tử vào ô dưới đây:</p>
+    
+    <textarea id="invoiceText" placeholder="Ví dụ: Đại lý Ford - Ngày 22/05/2026 - Xe 51K-529.01 - 55.000Km... 1. Nhớt Motocraft 5W30 Qty: 8L..."></textarea>
+    
+    <button onclick="sendToAgentBackend()">⚡ Gửi Agent Xử Lý & Ghi Sổ Tự Động</button>
+    
+    <div id="status"></div>
+</div>
+
+<script>
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwLbAOScGT2SRxTBXUqY6TKrLAl8JWa-OxSkEc1hbOtvy-FTZriEedUYjcdbHGQlTc/exec";
+
+    function sendToAgentBackend() {
+        let text = document.getElementById("invoiceText").value;
+        if(!text) { alert("Vui lòng nhập thông tin hóa đơn!"); return; }
+        
+        document.getElementById("status").innerHTML = "⏳ Agent đang đọc hóa đơn, tra cứu danh mục OEM/Hãng và ghi dữ liệu...";
+        
+        fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            mode: "no-cors", // Tránh lỗi CORS khi gọi chéo nền tảng sang Google
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rawText: text })
+        })
+        .then(response => {
+            document.getElementById("status").innerHTML = "✅ Thành công! Dữ liệu đã được chuẩn hóa tự động và ghi vào Sheet.";
+            document.getElementById("invoiceText").value = "";
+        })
+        .catch(error => {
+            document.getElementById("status").innerHTML = "❌ Lỗi kết nối: " + error;
+        });
+    }
+</script>
+</body>
+</html>
