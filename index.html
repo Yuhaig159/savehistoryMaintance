@@ -14,7 +14,7 @@
             --border: #dee2e6;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: var(--bg-color); color: #333; }
-        .app-container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .app-container { max-width: 98%; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: max-width 0.3s; }
         h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--primary); padding-bottom: 10px; font-size: 24px; }
         
         /* Upload Screen */
@@ -35,12 +35,12 @@
         button.btn-outline:hover { background: var(--primary); color: white; }
         
         /* Review Screen */
-        #reviewScreen { display: none; gap: 25px; flex-wrap: wrap; margin-top: 15px; }
-        .pdf-panel { flex: 1; min-width: 400px; display: flex; flex-direction: column; }
-        iframe#pdfViewer { width: 100%; height: 800px; border: 1px solid var(--border); border-radius: 4px; background: #f8f9fa; }
-        img#imageViewer { width: 100%; max-height: 800px; object-fit: contain; border: 1px solid var(--border); border-radius: 4px; display: none; background: #f8f9fa; }
+        #reviewScreen { display: none; gap: 30px; flex-wrap: nowrap; margin-top: 15px; }
+        .pdf-panel { flex: 0 0 450px; display: flex; flex-direction: column; }
+        iframe#pdfViewer { width: 100%; height: 850px; border: 1px solid var(--border); border-radius: 4px; background: #f8f9fa; }
+        img#imageViewer { width: 100%; max-height: 850px; object-fit: contain; border: 1px solid var(--border); border-radius: 4px; display: none; background: #f8f9fa; }
         
-        .data-panel { flex: 1.5; min-width: 600px; display: flex; flex-direction: column; }
+        .data-panel { flex: 1; min-width: 700px; display: flex; flex-direction: column; }
         
         /* Form Header */
         .header-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid var(--border); }
@@ -54,14 +54,15 @@
         .table-actions button { padding: 6px 12px; font-size: 13px; }
         
         /* Table */
-        .table-container { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 20px; max-height: 450px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        .table-container { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 20px; max-height: 550px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th { background: #eef2f5; padding: 10px; text-align: left; font-size: 13px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 10; color: #333; }
-        td { padding: 6px; border-bottom: 1px solid var(--border); }
-        td input { width: 100%; border: 1px solid transparent; padding: 6px; box-sizing: border-box; font-size: 14px; border-radius: 3px; font-family: inherit; }
-        td input:focus { border: 1px solid var(--primary); outline: none; background: #fff; }
+        td { padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        td input, td textarea { width: 100%; border: 1px solid transparent; padding: 6px; box-sizing: border-box; font-size: 14px; border-radius: 3px; font-family: inherit; }
+        td textarea { resize: vertical; min-height: 34px; line-height: 1.4; }
+        td input:focus, td textarea:focus { border: 1px solid var(--primary); outline: none; background: #fff; }
         td input[type="number"] { text-align: right; }
-        .row-checkbox { cursor: pointer; width: 16px; height: 16px; }
+        .row-checkbox { cursor: pointer; width: 18px; height: 18px; margin-top: 5px; }
         
         /* Totals */
         .totals-section { align-self: flex-end; background: #f8f9fa; padding: 15px 20px; border-radius: 6px; border: 1px solid var(--border); width: 320px; margin-bottom: 20px; }
@@ -289,14 +290,14 @@
             
             tr.innerHTML = `
                 <td class="text-center"><input type="checkbox" class="row-checkbox" ${item.selected ? 'checked' : ''} onchange="updateSelection(${index}, this.checked)"></td>
-                <td class="text-center">${index + 1}</td>
+                <td class="text-center" style="padding-top: 13px;">${index + 1}</td>
                 <td><input type="text" value="${safeMa}" onchange="updateItem(${index}, 'ma', this.value)"></td>
-                <td><input type="text" value="${safeTen}" onchange="updateItem(${index}, 'ten', this.value)"></td>
+                <td><textarea rows="2" onchange="updateItem(${index}, 'ten', this.value)">${safeTen}</textarea></td>
                 <td><input type="number" step="0.01" value="${item.sl}" oninput="updateItem(${index}, 'sl', this.value)"></td>
                 <td><input type="text" value="${safeDv}" onchange="updateItem(${index}, 'dv', this.value)"></td>
                 <td><input type="number" value="${item.gia}" oninput="updateItem(${index}, 'gia', this.value)"></td>
                 <td><input type="number" value="${item.vat}" oninput="updateItem(${index}, 'vat', this.value)"></td>
-                <td class="text-right" style="font-weight: 600; color: #1f4e78;">${formatMoney(thanhTien)}</td>
+                <td class="text-right" style="font-weight: 600; color: #1f4e78; padding-top: 13px;">${formatMoney(thanhTien)}</td>
             `;
             tbody.appendChild(tr);
         });
