@@ -43,7 +43,7 @@
         .data-panel { flex: 1; min-width: 700px; display: flex; flex-direction: column; }
         
         /* Form Header */
-        .header-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid var(--border); }
+        .header-form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid var(--border); }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; }
         .form-group input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; font-family: inherit; }
@@ -120,9 +120,13 @@
             <div class="header-form">
                 <div class="form-group"><label>Số phiếu / Hóa đơn</label><input type="text" id="hdrSoPhieu"></div>
                 <div class="form-group"><label>Ngày</label><input type="date" id="hdrNgay"></div>
+                <div class="form-group"><label>Đơn vị sửa chữa (Đại lý)</label><input type="text" id="hdrDonVi"></div>
                 <div class="form-group"><label>Tên khách hàng</label><input type="text" id="hdrTenKH"></div>
-                <div class="form-group"><label>Biển số</label><input type="text" id="hdrBienSo"></div>
+                <div class="form-group"><label>Địa chỉ</label><input type="text" id="hdrDiaChi"></div>
+                <div class="form-group"><label>Điện thoại</label><input type="text" id="hdrDienThoai"></div>
+                <div class="form-group"><label>Biển số xe</label><input type="text" id="hdrBienSo"></div>
                 <div class="form-group"><label>Loại xe</label><input type="text" id="hdrLoaiXe"></div>
+                <div class="form-group"><label>Số khung</label><input type="text" id="hdrSoKhung"></div>
                 <div class="form-group"><label>Số Km</label><input type="number" id="hdrSoKm"></div>
             </div>
             
@@ -163,6 +167,7 @@
             <!-- Totals -->
             <div class="totals-section">
                 <div class="total-row"><span>Tổng trước thuế:</span> <span id="lblTongTruoc">0</span></div>
+                <div class="total-row"><span>Tiền chiết khấu:</span> <span id="lblTienCK">0</span></div>
                 <div class="total-row"><span>Tiền thuế VAT:</span> <span id="lblTienThue">0</span></div>
                 <div class="total-row grand-total"><span>Tổng sau thuế:</span> <span id="lblTongSau">0</span></div>
             </div>
@@ -235,31 +240,40 @@
         document.getElementById('loader').style.display = 'none';
     }
 
-    // --- AGENT EXTRACTION (MOCK GEMINI API) ---
+    // --- AGENT EXTRACTION (MOCK DATA) ---
     function analyzePDF() {
+        if (!currentFile) {
+            alert("Vui lòng chọn file trước khi phân tích!");
+            return;
+        }
+
         document.getElementById('fileInfo').style.display = 'none';
         document.getElementById('loader').style.display = 'block';
         
-        // Mô phỏng gọi API AI (Gemini) mất 1.5s
+        // Mô phỏng quá trình AI đọc PDF mất 1.5s
         setTimeout(() => {
-            // Mock Data bám sát Hóa đơn Long Khánh Ford (đầy đủ thông tin)
+            // Dữ liệu mẫu (Mock Data) Long Khánh Ford
             document.getElementById('hdrSoPhieu').value = "51D94004_20052026-2";
             document.getElementById('hdrNgay').value = "2026-05-20";
+            if(document.getElementById('hdrDonVi')) document.getElementById('hdrDonVi').value = "LONG KHÁNH FORD";
             document.getElementById('hdrTenKH').value = "CTY CỔ PHẦN KHỬ TRÙNG VIỆT NAM";
+            document.getElementById('hdrDiaChi').value = "29 Tôn Đức Thắng, Phường Sài Gòn, HCM";
+            document.getElementById('hdrDienThoai').value = "0396417859";
             document.getElementById('hdrBienSo').value = "51D94004";
             document.getElementById('hdrLoaiXe').value = "RANGER XLS AT 2.0L AT 4X2";
+            document.getElementById('hdrSoKhung').value = "RL2UMFC50RDR79911";
             document.getElementById('hdrSoKm').value = "106024";
             
             extractedItems = [
-                { id: 1, selected: true, ma: "AXL5W30V4", ten: "Nhớt máy 5W-30", sl: 8.10, dv: "LÍT", gia: 213208, vat: 8 },
-                { id: 2, selected: true, ma: "JU2Z6731B", ten: "LỌC NHỚT RG, EV 12", sl: 1.00, dv: "CÁI", gia: 185000, vat: 8 },
-                { id: 3, selected: true, ma: "05.HGV-VSP-C", ten: "Chất tẩy rửa thắng", sl: 1.00, dv: "CHAI", gia: 150000, vat: 8 },
-                { id: 4, selected: true, ma: "N1WZ17528B", ten: "CHỔI GẠT MƯA PHẢI", sl: 1.00, dv: "CÁI", gia: 445000, vat: 8 },
-                { id: 5, selected: true, ma: "N1WZ17528A", ten: "CHỔI GẠT MƯA TRÁI", sl: 1.00, dv: "CÁI", gia: 494000, vat: 8 },
-                { id: 6, selected: true, ma: "00014", ten: "Công Bảo dưỡng cấp 100K + vệ sinh thắng tra mỡ ắc", sl: 2.00, dv: "Giờ", gia: 390000, vat: 8 },
-                { id: 7, selected: true, ma: "88007", ten: "Mỡ bò ác thắng + kiểm tra đào bánh", sl: 1.00, dv: "Lần", gia: 100000, vat: 8 },
-                { id: 8, selected: true, ma: "09001", ten: "FSA: K", sl: 1.00, dv: "Giờ", gia: 0, vat: 8 },
-                { id: 9, selected: true, ma: "09001", ten: "KT xe chạy 50-60km/h đạp ga tăng tốc rung giật động cơ", sl: 1.00, dv: "Giờ", gia: 0, vat: 8 }
+                { id: 1, selected: true, ma: "AXL5W30V4", ten: "Nhớt máy 5W-30", sl: 8.10, dv: "LÍT", gia: 213208, vat: 8, gg: 0 },
+                { id: 2, selected: true, ma: "JU2Z6731B", ten: "LỌC NHỚT RG, EV 12", sl: 1.00, dv: "CÁI", gia: 185000, vat: 8, gg: 0 },
+                { id: 3, selected: true, ma: "05.HGV-VSP-C", ten: "Chất tẩy rửa thắng", sl: 1.00, dv: "CHAI", gia: 150000, vat: 8, gg: 0 },
+                { id: 4, selected: true, ma: "N1WZ17528B", ten: "CHỔI GẠT MƯA PHẢI", sl: 1.00, dv: "CÁI", gia: 445000, vat: 8, gg: 0 },
+                { id: 5, selected: true, ma: "N1WZ17528A", ten: "CHỔI GẠT MƯA TRÁI", sl: 1.00, dv: "CÁI", gia: 494000, vat: 8, gg: 0 },
+                { id: 6, selected: true, ma: "00014", ten: "Công Bảo dưỡng cấp 100K + vệ sinh thắng tra mỡ ắc", sl: 2.00, dv: "Giờ", gia: 390000, vat: 8, gg: 0 },
+                { id: 7, selected: true, ma: "88007", ten: "Mỡ bò ác thắng + kiểm tra đào bánh", sl: 1.00, dv: "Lần", gia: 100000, vat: 8, gg: 0 },
+                { id: 8, selected: true, ma: "09001", ten: "FSA: K", sl: 1.00, dv: "Giờ", gia: 0, vat: 8, gg: 0 },
+                { id: 9, selected: true, ma: "09001", ten: "KT xe chạy 50-60km/h đạp ga tăng tốc rung giật động cơ", sl: 1.00, dv: "Giờ", gia: 0, vat: 8, gg: 0 }
             ];
             
             renderTable();
@@ -281,22 +295,34 @@
         
         extractedItems.forEach((item, index) => {
             const tr = document.createElement('tr');
-            let thanhTien = item.sl * item.gia;
+            
+            // Calculate Item Total
+            let sl = parseFloat(item.sl) || 0;
+            let gia = parseFloat(item.gia) || 0;
+            let gg = parseFloat(item.gg) || 0;
+            let tienChietKhau = (sl * gia) * (gg / 100);
+            let thanhTien = (sl * gia) - tienChietKhau;
             
             // Escape quotes to prevent HTML layout break on re-render
             let safeMa = (item.ma || "").toString().replace(/"/g, '&quot;');
             let safeTen = (item.ten || "").toString().replace(/"/g, '&quot;');
             let safeDv = (item.dv || "").toString().replace(/"/g, '&quot;');
             
+            // Highlight row if missing crucial data
+            if (!item.ten || item.ten.trim() === "" || (!item.ma && gia > 0)) {
+                tr.style.backgroundColor = "#fff3cd"; // Yellow highlight
+            }
+            
             tr.innerHTML = `
                 <td class="text-center"><input type="checkbox" class="row-checkbox" ${item.selected ? 'checked' : ''} onchange="updateSelection(${index}, this.checked)"></td>
                 <td class="text-center" style="padding-top: 13px;">${index + 1}</td>
-                <td><input type="text" value="${safeMa}" onchange="updateItem(${index}, 'ma', this.value)"></td>
-                <td><textarea rows="2" onchange="updateItem(${index}, 'ten', this.value)">${safeTen}</textarea></td>
+                <td><input type="text" value="${safeMa}" onchange="updateItem(${index}, 'ma', this.value)" style="${!item.ma ? 'background:#fff3cd' : ''}"></td>
+                <td><textarea rows="2" onchange="updateItem(${index}, 'ten', this.value)" style="${!item.ten ? 'background:#fff3cd' : ''}">${safeTen}</textarea></td>
                 <td><input type="number" step="0.01" value="${item.sl}" oninput="updateItem(${index}, 'sl', this.value)"></td>
                 <td><input type="text" value="${safeDv}" onchange="updateItem(${index}, 'dv', this.value)"></td>
                 <td><input type="number" value="${item.gia}" oninput="updateItem(${index}, 'gia', this.value)"></td>
                 <td><input type="number" value="${item.vat}" oninput="updateItem(${index}, 'vat', this.value)"></td>
+                <td><input type="number" value="${item.gg}" oninput="updateItem(${index}, 'gg', this.value)"></td>
                 <td class="text-right" style="font-weight: 600; color: #1f4e78; padding-top: 13px;">${formatMoney(thanhTien)}</td>
             `;
             tbody.appendChild(tr);
@@ -306,15 +332,29 @@
     }
 
     function updateItem(index, field, value) {
-        if (field === 'sl' || field === 'gia' || field === 'vat') {
+        if (field === 'sl' || field === 'gia' || field === 'vat' || field === 'gg') {
             extractedItems[index][field] = parseFloat(value) || 0;
             // Update thành tiền ô cuối cùng
             const row = document.getElementById('tableBody').children[index];
-            const thanhTien = extractedItems[index].sl * extractedItems[index].gia;
+            let sl = extractedItems[index].sl || 0;
+            let gia = extractedItems[index].gia || 0;
+            let gg = extractedItems[index].gg || 0;
+            let tienChietKhau = (sl * gia) * (gg / 100);
+            let thanhTien = (sl * gia) - tienChietKhau;
+            
             row.lastElementChild.textContent = formatMoney(thanhTien);
             calculateTotals();
         } else {
             extractedItems[index][field] = value;
+            // Remove highlight if user fills missing data
+            const row = document.getElementById('tableBody').children[index];
+            if (extractedItems[index].ten && extractedItems[index].ten.trim() !== "") {
+                row.style.backgroundColor = "";
+                row.children[3].children[0].style.backgroundColor = "";
+            }
+            if (extractedItems[index].ma && extractedItems[index].ma.trim() !== "") {
+                row.children[2].children[0].style.backgroundColor = "";
+            }
         }
     }
 
@@ -334,22 +374,34 @@
     }
 
     function calculateTotals() {
-        let tongTruocThue = 0;
+        let tongTruoc = 0;
         let tienThue = 0;
+        let tongCK = 0;
         
         extractedItems.forEach(item => {
             if (item.selected) {
-                let thanhTien = item.sl * item.gia;
-                tongTruocThue += thanhTien;
-                tienThue += thanhTien * (item.vat / 100);
+                let sl = parseFloat(item.sl) || 0;
+                let gia = parseFloat(item.gia) || 0;
+                let vat = parseFloat(item.vat) || 0;
+                let gg = parseFloat(item.gg) || 0;
+                
+                let ttTruocThue = sl * gia;
+                let ck = ttTruocThue * (gg / 100);
+                let ttSauCK = ttTruocThue - ck;
+                let thue = ttSauCK * (vat / 100);
+                
+                tongTruoc += ttTruocThue;
+                tongCK += ck;
+                tienThue += thue;
             }
         });
         
-        let tongSauThue = tongTruocThue + tienThue;
+        let tongSau = tongTruoc - tongCK + tienThue;
         
-        document.getElementById('lblTongTruoc').textContent = formatMoney(tongTruocThue);
+        document.getElementById('lblTongTruoc').textContent = formatMoney(tongTruoc);
+        document.getElementById('lblTienCK').textContent = formatMoney(tongCK);
         document.getElementById('lblTienThue').textContent = formatMoney(tienThue);
-        document.getElementById('lblTongSau').textContent = formatMoney(tongSauThue);
+        document.getElementById('lblTongSau').textContent = formatMoney(tongSau);
     }
 
     // --- TABLE ACTIONS ---
@@ -362,7 +414,8 @@
             sl: 1,
             dv: "Cái",
             gia: 0,
-            vat: 8
+            vat: 8,
+            gg: 0
         });
         renderTable();
     }
@@ -377,26 +430,51 @@
 
     // --- API EXPORT / SAVE ---
     function getFinalData() {
-        const selectedItems = extractedItems.filter(item => item.selected).map(item => ({
-            maPhuTung: item.ma,
-            chiTietCongViec: item.ten,
-            soLuong: item.sl,
-            donVi: item.dv,
-            donGia: item.gia,
-            vat: item.vat,
-            tongTien: item.sl * item.gia
-        }));
+        const selectedItems = extractedItems.filter(item => item.selected).map((item, index) => {
+            let sl = item.sl || 0;
+            let gia = item.gia || 0;
+            let gg = item.gg || 0;
+            let ck = (sl * gia) * (gg / 100);
+            return {
+                stt: index + 1,
+                ma_pt: item.ma,
+                dien_giai: item.ten,
+                sl: sl,
+                dvt: item.dv,
+                don_gia: gia,
+                vat: item.vat || 0,
+                gg: gg,
+                thanh_tien: (sl * gia) - ck
+            };
+        });
         
+        const tongTruocText = document.getElementById('lblTongTruoc').textContent.replace(/,/g, '');
+        const tienCKText = document.getElementById('lblTienCK').textContent.replace(/,/g, '');
+        const tienThueText = document.getElementById('lblTienThue').textContent.replace(/,/g, '');
+        const tongSauText = document.getElementById('lblTongSau').textContent.replace(/,/g, '');
+
         return {
+            action: "save",
             header: {
-                soPhieu: document.getElementById('hdrSoPhieu').value,
-                ngayHoanThanh: document.getElementById('hdrNgay').value,
-                tenKhachHang: document.getElementById('hdrTenKH').value,
-                bienSoXe: document.getElementById('hdrBienSo').value,
-                loaiXe: document.getElementById('hdrLoaiXe').value,
-                soKm: parseFloat(document.getElementById('hdrSoKm').value) || 0,
+                so_phieu: document.getElementById('hdrSoPhieu').value,
+                ngay: document.getElementById('hdrNgay').value,
+                ten_khach_hang: document.getElementById('hdrTenKH').value,
+                dia_chi: document.getElementById('hdrDiaChi').value,
+                dien_thoai: document.getElementById('hdrDienThoai').value,
+                bien_so: document.getElementById('hdrBienSo').value,
+                loai_xe: document.getElementById('hdrLoaiXe').value,
+                so_khung: document.getElementById('hdrSoKhung').value,
+                so_km: parseFloat(document.getElementById('hdrSoKm').value) || 0,
+                don_vi_sua_chua: document.getElementById('hdrDonVi').value // Retained extra field
             },
-            items: selectedItems
+            hang_muc: selectedItems,
+            tong_tien: {
+                truoc_thue: parseFloat(tongTruocText),
+                tien_ck: parseFloat(tienCKText),
+                tien_thue: parseFloat(tienThueText),
+                sau_thue: parseFloat(tongSauText)
+            },
+            saved_at: new Date().toISOString()
         };
     }
 
@@ -407,8 +485,8 @@
     }
 
     function confirmAndSave() {
-        const data = getFinalData();
-        if (data.items.length === 0) {
+        const payload = getFinalData();
+        if (payload.hang_muc.length === 0) {
             alert("Vui lòng tích chọn ít nhất 1 hạng mục để lưu vào Google Sheets!");
             return;
         }
@@ -418,36 +496,26 @@
         btn.innerHTML = "⏳ Đang ghi vào Google Sheets...";
         btn.disabled = true;
 
-        // Định dạng lại payload để tương thích với Backend code.gs.txt
-        const payload = {
-            rawText: "Dữ liệu đã duyệt qua Table UI",
-            extractedData: {
-                bienSoXe: data.header.bienSoXe,
-                donViThucHien: data.header.tenKhachHang, // map tạm theo Backend hiện tại
-                ngayHoanThanh: data.header.ngayHoanThanh,
-                soKm: data.header.soKm,
-                items: data.items
-            },
-            fullDocument: data // Backend tương lai có thể dùng trường này
-        };
-        
         fetch(GAS_WEB_APP_URL, {
             method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         })
-        .then(() => {
-            alert("✅ Đã ghi Sổ thành công!");
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "error") {
+                alert("❌ Lỗi từ server: " + data.message);
+            } else {
+                alert(`✅ LƯU THÀNH CÔNG!\n\nĐã lưu ${payload.hang_muc.length} hạng mục.\nTổng tiền: ${document.getElementById('lblTongSau').textContent} VNĐ\nDữ liệu đã được ghi vào Google Sheets.`);
+            }
             btn.innerHTML = oldText;
             btn.disabled = false;
-        })
-        .catch(error => {
-            alert("❌ Lỗi kết nối: " + error);
+        }).catch(err => {
+            alert("❌ Lỗi mạng hoặc lỗi hệ thống. Vui lòng kiểm tra lại URL GAS và thử lại.\nLỗi chi tiết: " + err);
             btn.innerHTML = oldText;
             btn.disabled = false;
         });
     }
+
 </script>
 </body>
 </html>
