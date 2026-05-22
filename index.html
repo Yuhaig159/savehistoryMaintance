@@ -11,17 +11,37 @@
         label { display: block; font-weight: bold; margin-bottom: 5px; color: #1f4e78; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         .item-box { border: 1px dashed #1f4e78; padding: 15px; margin-bottom: 10px; background: #f8fbff; border-radius: 5px;}
-        button { background: #1f4e78; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 10px;}
+        button { background: #1f4e78; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 10px; transition: 0.2s;}
         button:hover { background: #2b6cb0; }
+        button:disabled { background: #a0aec0; cursor: not-allowed; }
         .btn-add { background: #48bb78; }
         .btn-add:hover { background: #38a169; }
-        #status { margin-top: 15px; text-align: center; font-weight: bold; }
+        .btn-scan { background: #e67e22; }
+        .btn-scan:hover { background: #d35400; }
+        #status, #scanStatus { margin-top: 15px; text-align: center; font-weight: bold; }
+        
+        .upload-section {
+            border: 2px dashed #1f4e78;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            background: #eef2f5;
+            margin-bottom: 20px;
+        }
+        .upload-section input[type="file"] { border: none; padding: 0; background: transparent; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2 style="text-align: center; color: #1f4e78;">📝 NHẬP PHIẾU BẢO DƯỠNG</h2>
+    
+    <div class="upload-section">
+        <label>Tải lên Báo giá / Hóa đơn (PDF hoặc Ảnh):</label>
+        <input type="file" id="fileInput" accept=".pdf, image/*">
+        <button class="btn-scan" id="btnScan" onclick="scanDocument()">✨ QUÉT TỰ ĐỘNG BẰNG AI</button>
+        <div id="scanStatus" style="display: none; color: #e67e22;">⏳ AI đang đọc dữ liệu, vui lòng đợi 5-10 giây...</div>
+    </div>
     
     <div class="form-group"><label>Biển Số Xe:</label><input type="text" id="bienSo" placeholder="VD: 51K - 529.01"></div>
     <div class="form-group"><label>Đơn Vị Thực Hiện:</label><input type="text" id="donVi" placeholder="VD: Toyota Tân Cảng"></div>
@@ -49,22 +69,123 @@
 </div>
 
 <script>
-    // BẠN HÃY DÁN ĐƯỜNG LINK WEB APP URL CỦA GOOGLE APPS SCRIPT VÀO ĐÂY:
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwLJldZEMrWFq13VyJ24rFuyxwp47hM4GzciSSr_rbCJlgkisTkSoeiVv_ggzKos79o/exec";
 
+    // ----------------------------------------------------
+    // HÀM MỚI: QUÉT VÀ TRÍCH XUẤT DỮ LIỆU BẰNG AI
+    // ----------------------------------------------------
+    function scanDocument() {
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length === 0) {
+            alert("Vui lòng chọn một file PDF hoặc Hình ảnh trước khi quét!");
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const scanStatus = document.getElementById('scanStatus');
+        const btnScan = document.getElementById('btnScan');
+        
+        scanStatus.style.display = "block";
+        btnScan.disabled = true;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Lấy chuỗi base64 của file
+            const base64Content = e.target.result.split(',')[1];
+            
+            const payload = {
+                action: "analyze_pdf", // Gọi nhánh action AI trên GAS
+                fileBase64: base64Content,
+                mimeType: file.type
+            };
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                scanStatus.style.display = "none";
+                btnScan.disabled = false;
+
+                if (data.status === "error") {
+                    alert("❌ Lỗi trích xuất AI: " + data.message);
+                    return;
+                }
+
+                const result = data.data;
+
+                // 1. Điền thông tin chung (Header)
+                document.getElementById('bienSo').value = result.header.bien_so || '';
+                document.getElementById('donVi').value = result.header.don_vi_sua_chua || '';
+                document.getElementById('ngay').value = result.header.ngay || '';
+                document.getElementById('soKm').value = result.header.so_km || '';
+
+                // 2. Điền thông tin chi tiết (Xóa danh sách cũ và tạo mới)
+                const container = document.getElementById('itemsContainer');
+                container.innerHTML = ''; // Làm sạch container
+                
+                if (result.hang_muc && result.hang_muc.length > 0) {
+                    result.hang_muc.forEach(item => {
+                        const itemBox = document.createElement('div');
+                        itemBox.className = 'item-box';
+                        
+                        // Tính tổng tiền cho từng mục (Số lượng * Đơn giá)
+                        const soLuong = item.sl || 1;
+                        const tongTienItem = soLuong * (item.gia || 0);
+
+                        itemBox.innerHTML = `
+                            <div class="form-group"><label>Chi tiết công việc (Hãng ghi):</label><input type="text" class="chiTiet" value="${item.ten || ''}"></div>
+                            <div style="display: flex; gap: 10px;">
+                                <div class="form-group" style="flex: 1;"><label>Số lượng:</label><input type="number" class="soLuong" value="${soLuong}" step="0.1"></div>
+                                <div class="form-group" style="flex: 1;"><label>Tổng tiền:</label><input type="number" class="tongTien" value="${tongTienItem}"></div>
+                            </div>
+                            <input type="hidden" class="donViTinh" value="${item.dv || 'Cái'}">
+                            <input type="hidden" class="phanLoai" value="Mua sắm">
+                        `;
+                        container.appendChild(itemBox);
+                    });
+                } else {
+                    // Nếu AI không đọc được hạng mục nào thì chèn 1 ô trống
+                    addItem(); 
+                }
+                
+                alert("✅ AI đã quét và điền dữ liệu thành công! Hãy kiểm tra lại trước khi gửi.");
+            })
+            .catch(err => {
+                scanStatus.style.display = "none";
+                btnScan.disabled = false;
+                alert("❌ Lỗi kết nối đến Server AI: " + err.message);
+            });
+        };
+        
+        // Kích hoạt việc đọc file
+        reader.readAsDataURL(file);
+    }
+
+    // ----------------------------------------------------
+    // CÁC HÀM CŨ GIỮ NGUYÊN (Thêm/Gửi dữ liệu)
+    // ----------------------------------------------------
     function addItem() {
-        const box = document.querySelector('.item-box').cloneNode(true);
-        box.querySelectorAll('input').forEach(input => input.value = '');
+        // Lấy html mẫu của ô đầu tiên để clone nếu có, nếu container rỗng thì tạo mới
+        let template = `
+            <div class="form-group"><label>Chi tiết công việc (Hãng ghi):</label><input type="text" class="chiTiet" placeholder="VD: SP 10W30"></div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>Số lượng:</label><input type="number" class="soLuong" value="1" step="0.1"></div>
+                <div class="form-group" style="flex: 1;"><label>Tổng tiền:</label><input type="number" class="tongTien" placeholder="VNĐ"></div>
+            </div>
+            <input type="hidden" class="donViTinh" value="Cái">
+            <input type="hidden" class="phanLoai" value="Mua sắm">
+        `;
+        
+        const box = document.createElement('div');
+        box.className = 'item-box';
+        box.innerHTML = template;
         document.getElementById('itemsContainer').appendChild(box);
     }
 
     function submitData() {
         const statusEl = document.getElementById("status");
-        if (GAS_URL === "DÁN_LINK_WEB_APP_CỦA_BẠN_VÀO_ĐÂY") {
-            statusEl.style.color = "red";
-            statusEl.innerText = "Lỗi: Bạn chưa cấu hình GAS_URL trong file HTML!";
-            return;
-        }
 
         const items = [];
         document.querySelectorAll('.item-box').forEach(box => {
@@ -104,7 +225,9 @@
             statusEl.style.color = "green";
             statusEl.innerText = "✅ Thành công! Dữ liệu đã tự động Mapping vào Sheet.";
             // Reset form
-            document.querySelectorAll('input').forEach(input => input.value = '');
+            document.querySelectorAll('input:not([type="hidden"])').forEach(input => input.value = '');
+            document.getElementById('itemsContainer').innerHTML = '';
+            addItem(); // Tạo lại 1 ô trống mặc định
         })
         .catch(err => {
             statusEl.style.color = "red";
