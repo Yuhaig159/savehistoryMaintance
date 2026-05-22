@@ -184,7 +184,7 @@
         document.getElementById('itemsContainer').appendChild(box);
     }
 
-    function submitData() {
+function submitData() {
         const statusEl = document.getElementById("status");
 
         const items = [];
@@ -205,7 +205,9 @@
             alert("Vui lòng nhập ít nhất 1 chi tiết công việc!"); return;
         }
 
+        // Bổ sung action: "save" để Backend biết cần phải lưu dữ liệu
         const payload = {
+            action: "save", 
             bienSo: document.getElementById('bienSo').value,
             donVi: document.getElementById('donVi').value,
             ngay: document.getElementById('ngay').value,
@@ -222,16 +224,23 @@
         })
         .then(res => res.json())
         .then(data => {
-            statusEl.style.color = "green";
-            statusEl.innerText = "✅ Thành công! Dữ liệu đã tự động Mapping vào Sheet.";
-            // Reset form
-            document.querySelectorAll('input:not([type="hidden"])').forEach(input => input.value = '');
-            document.getElementById('itemsContainer').innerHTML = '';
-            addItem(); // Tạo lại 1 ô trống mặc định
+            // Kiểm tra trạng thái thực sự từ server trả về
+            if(data.status === "success") {
+                statusEl.style.color = "green";
+                statusEl.innerText = "✅ Thành công! Dữ liệu đã được ghi vào Sheet.";
+                // Reset form
+                document.querySelectorAll('input:not([type="hidden"])').forEach(input => input.value = '');
+                document.getElementById('itemsContainer').innerHTML = '';
+                addItem(); 
+            } else {
+                statusEl.style.color = "red";
+                statusEl.innerText = "❌ Lỗi từ server: " + data.message;
+            }
         })
         .catch(err => {
             statusEl.style.color = "red";
-            statusEl.innerText = "❌ Lỗi: Có thể do mạng hoặc cấu hình CORS.";
+            statusEl.innerText = "❌ Lỗi kết nối đến Google Sheets.";
+            console.error(err);
         });
     }
 </script>
