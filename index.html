@@ -197,6 +197,12 @@
         }
     });
 
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleFileSelection(e.target.files[0]);
+        }
+    });
+
     function handleFileSelection(file) {
         if (!file) return;
         currentFile = file;
@@ -276,13 +282,18 @@
             const tr = document.createElement('tr');
             let thanhTien = item.sl * item.gia;
             
+            // Escape quotes to prevent HTML layout break on re-render
+            let safeMa = (item.ma || "").toString().replace(/"/g, '&quot;');
+            let safeTen = (item.ten || "").toString().replace(/"/g, '&quot;');
+            let safeDv = (item.dv || "").toString().replace(/"/g, '&quot;');
+            
             tr.innerHTML = `
                 <td class="text-center"><input type="checkbox" class="row-checkbox" ${item.selected ? 'checked' : ''} onchange="updateSelection(${index}, this.checked)"></td>
                 <td class="text-center">${index + 1}</td>
-                <td><input type="text" value="${item.ma}" onchange="updateItem(${index}, 'ma', this.value)"></td>
-                <td><input type="text" value="${item.ten}" onchange="updateItem(${index}, 'ten', this.value)"></td>
+                <td><input type="text" value="${safeMa}" onchange="updateItem(${index}, 'ma', this.value)"></td>
+                <td><input type="text" value="${safeTen}" onchange="updateItem(${index}, 'ten', this.value)"></td>
                 <td><input type="number" step="0.01" value="${item.sl}" oninput="updateItem(${index}, 'sl', this.value)"></td>
-                <td><input type="text" value="${item.dv}" onchange="updateItem(${index}, 'dv', this.value)"></td>
+                <td><input type="text" value="${safeDv}" onchange="updateItem(${index}, 'dv', this.value)"></td>
                 <td><input type="number" value="${item.gia}" oninput="updateItem(${index}, 'gia', this.value)"></td>
                 <td><input type="number" value="${item.vat}" oninput="updateItem(${index}, 'vat', this.value)"></td>
                 <td class="text-right" style="font-weight: 600; color: #1f4e78;">${formatMoney(thanhTien)}</td>
