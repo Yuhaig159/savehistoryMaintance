@@ -44,7 +44,33 @@
             <h3 style="margin-top: 0; color: #1f4e78; font-size: 1.17em; display: none;" id="textEditorTitle">Nội dung trích xuất</h3>
             <textarea id="invoiceText" placeholder="Ví dụ: Đại lý Ford - Ngày 22/05/2026 - Xe 51K-529.01 - 55.000Km... 1. Nhớt Motocraft 5W30 Qty: 8L..."></textarea>
             
-            <button onclick="sendToAgentBackend()" style="width: 100%;">⚡ Gửi Agent Xử Lý & Ghi Sổ Tự Động</button>
+            <button id="btnExtract" onclick="runAgentExtraction()" style="width: 100%; margin-bottom: 10px;">🔍 Chạy Agent Trích Xuất Dữ Liệu</button>
+            
+            <div id="extractionReview" style="display: none; border: 1px solid #1f4e78; border-radius: 4px; padding: 15px; margin-bottom: 10px;">
+                <h4 style="margin-top: 0; color: #1f4e78;">📋 Kết quả trích xuất</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div><label style="font-size: 0.9em;">Biển số xe:</label><input type="text" id="extBienSo" style="width: 100%; box-sizing: border-box; padding: 5px;"></div>
+                    <div><label style="font-size: 0.9em;">Đơn vị thực hiện:</label><input type="text" id="extDonVi" style="width: 100%; box-sizing: border-box; padding: 5px;"></div>
+                    <div><label style="font-size: 0.9em;">Ngày hoàn thành:</label><input type="date" id="extNgay" style="width: 100%; box-sizing: border-box; padding: 5px;"></div>
+                    <div><label style="font-size: 0.9em;">Số Km:</label><input type="number" id="extKm" style="width: 100%; box-sizing: border-box; padding: 5px;"></div>
+                </div>
+                <h5 style="margin: 10px 0 5px 0;">Hạng mục vật tư/nhân công:</h5>
+                <div style="max-height: 200px; overflow-y: auto; margin-bottom: 10px; border: 1px solid #ccc;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;" id="extTable">
+                        <thead style="background: #eef2f5; position: sticky; top: 0;">
+                            <tr>
+                                <th style="border: 1px solid #ccc; padding: 5px;">Tên Hạng Mục</th>
+                                <th style="border: 1px solid #ccc; padding: 5px; width: 60px;">SL</th>
+                                <th style="border: 1px solid #ccc; padding: 5px; width: 60px;">ĐV</th>
+                                <th style="border: 1px solid #ccc; padding: 5px; width: 80px;">T.Tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody id="extTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                <button onclick="sendStructuredDataToBackend()" style="width: 100%; background: #28a745;">💾 Xác Nhận & Ghi Sổ Tự Động</button>
+            </div>
             
             <div id="status"></div>
         </div>
@@ -143,21 +169,105 @@
         }
     });
 
-    function sendToAgentBackend() {
+    function runAgentExtraction() {
         let text = textarea.value;
-        if(!text) { alert("Vui lòng nhập thông tin hóa đơn!"); return; }
+        if(!text) { alert("Vui lòng nhập/trích xuất thông tin hóa đơn!"); return; }
         
-        statusDiv.innerHTML = "⏳ Agent đang đọc hóa đơn, tra cứu danh mục OEM/Hãng và ghi dữ liệu...";
+        statusDiv.innerHTML = "⏳ Agent đang phân tích nội dung hóa đơn...";
+        
+        // Agent (mô phỏng) sử dụng Regex để bóc tách một số dữ liệu cơ bản
+        setTimeout(() => {
+            // Tìm Biển số xe
+            let bienSoMatch = text.match(/\b\d{2}[A-Z]-\d{3}\.\d{2}\b|\b\d{2}[A-Z]\d{4,5}\b/i);
+            let bienSo = bienSoMatch ? bienSoMatch[0] : "";
+            
+            // Tìm ngày
+            let ngayMatch = text.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/);
+            let ngay = "";
+            if (ngayMatch) {
+                let parts = ngayMatch[0].split(/[\/\-]/);
+                if (parts.length === 3 && parts[2].length === 4) {
+                    ngay = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+            }
+            
+            // Tìm Số km
+            let kmMatch = text.match(/(\d+[\.\,]\d+|\d+)\s*(km)/i);
+            let km = kmMatch ? kmMatch[1].replace(/[\.\,]/g, "") : "";
+            
+            // Cập nhật lên form
+            document.getElementById("extBienSo").value = bienSo;
+            document.getElementById("extDonVi").value = text.toLowerCase().includes("ford") ? "Đại lý Ford" : (text.toLowerCase().includes("toyota") ? "Toyota" : "Đại lý ngoài");
+            document.getElementById("extNgay").value = ngay || new Date().toISOString().split('T')[0];
+            document.getElementById("extKm").value = km;
+            
+            // Mock dữ liệu hạng mục
+            let tbody = document.getElementById("extTableBody");
+            tbody.innerHTML = `
+                <tr>
+                    <td style="border: 1px solid #ccc; padding: 0;"><input type="text" value="Nhớt động cơ" style="width:100%; box-sizing: border-box; border: none; padding: 5px;"></td>
+                    <td style="border: 1px solid #ccc; padding: 0;"><input type="number" value="1" style="width:100%; box-sizing: border-box; border: none; padding: 5px;"></td>
+                    <td style="border: 1px solid #ccc; padding: 0;"><input type="text" value="Can" style="width:100%; box-sizing: border-box; border: none; padding: 5px;"></td>
+                    <td style="border: 1px solid #ccc; padding: 0;"><input type="number" value="500000" style="width:100%; box-sizing: border-box; border: none; padding: 5px;"></td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ccc; padding: 0;"><input type="text" value="Lọc nhớt" style="width:100%; box-sizing: border-box; border: none; padding: 5px;"></td>
+                    <td style="border: 1px solid #ccc; padding: 0;"><input type="number" value="1" style="width:100%; box-sizing: border-box; border: none; padding: 5px;"></td>
+                    <td style="border: 1px solid #ccc; padding: 0;"><input type="text" value="Cái" style="width:100%; box-sizing: border-box; border: none; padding: 5px;"></td>
+                    <td style="border: 1px solid #ccc; padding: 0;"><input type="number" value="150000" style="width:100%; box-sizing: border-box; border: none; padding: 5px;"></td>
+                </tr>
+            `;
+            
+            document.getElementById("invoiceText").style.display = "none";
+            document.getElementById("btnExtract").style.display = "none";
+            document.getElementById("extractionReview").style.display = "block";
+            statusDiv.innerHTML = "✅ Agent đã trích xuất xong! Vui lòng kiểm tra lại cấu trúc dữ liệu trước khi Ghi Sổ.";
+        }, 800);
+    }
+
+    function sendStructuredDataToBackend() {
+        statusDiv.innerHTML = "⏳ Đang kết nối Agent, tra cứu danh mục OEM/Hãng và ghi dữ liệu...";
+        
+        let items = [];
+        let rows = document.getElementById("extTableBody").querySelectorAll("tr");
+        rows.forEach(row => {
+            let inputs = row.querySelectorAll("input");
+            items.push({
+                chiTietCongViec: inputs[0].value,
+                phanLoai: "Mua sắm",
+                soLuong: parseFloat(inputs[1].value) || 0,
+                donVi: inputs[2].value,
+                tongTien: parseFloat(inputs[3].value) || 0
+            });
+        });
+
+        let payload = {
+            rawText: document.getElementById("invoiceText").value,
+            extractedData: {
+                bienSoXe: document.getElementById("extBienSo").value,
+                donViThucHien: document.getElementById("extDonVi").value,
+                ngayHoanThanh: document.getElementById("extNgay").value,
+                soKm: parseFloat(document.getElementById("extKm").value) || 0,
+                items: items
+            }
+        };
         
         fetch(GAS_WEB_APP_URL, {
             method: "POST",
-            mode: "no-cors", // Tránh lỗi CORS khi gọi chéo nền tảng sang Google
+            mode: "no-cors",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ rawText: text })
+            body: JSON.stringify(payload)
         })
         .then(response => {
-            statusDiv.innerHTML = "✅ Thành công! Dữ liệu đã được chuẩn hóa tự động và ghi vào Sheet.";
-            textarea.value = "";
+            statusDiv.innerHTML = "✅ Thành công! Dữ liệu đã được lưu vào Google Sheets.";
+            document.getElementById("extractionReview").style.display = "none";
+            document.getElementById("invoiceText").style.display = "block";
+            document.getElementById("invoiceText").value = "";
+            document.getElementById("btnExtract").style.display = "block";
+            
+            document.getElementById("extTableBody").innerHTML = "";
+            document.getElementById("extBienSo").value = "";
+            document.getElementById("extKm").value = "";
         })
         .catch(error => {
             statusDiv.innerHTML = "❌ Lỗi kết nối: " + error;
