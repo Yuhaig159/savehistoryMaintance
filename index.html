@@ -7,18 +7,26 @@
         body { font-family: 'Segoe UI', sans-serif; margin: 40px; background: #f4f6f9; }
         .container { max-width: 800px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { color: #1f4e78; }
-        textarea { width: 100%; height: 200px; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; }
+        textarea { width: 100%; height: 200px; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        textarea.dragover { border: 2px dashed #1f4e78; background: #eef2f5; }
         button { background: #1f4e78; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; font-size: 16px; }
         button:hover { background: #2f5597; }
         #status { margin-top: 20px; font-weight: bold; }
     </style>
+    <!-- Thêm thư viện PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
 </head>
 <body>
 
 <div class="container">
     <h2>🤖 Đội Xe Nội Bộ (70 Xe) - Agent Tiếp Nhận Hóa Đơn Bảo Dưỡng</h2>
-    <p>Thả file hóa đơn, ảnh chụp hoặc copy toàn bộ đoạn văn bản (Text) từ hóa đơn điện tử vào ô dưới đây:</p>
+    <p>Thả file hóa đơn (PDF, Text), chọn file trực tiếp, hoặc copy toàn bộ đoạn văn bản (Text) từ hóa đơn điện tử vào ô dưới đây:</p>
     
+    <input type="file" id="fileInput" accept=".pdf, .txt, text/plain, application/pdf, image/*" style="margin-bottom: 15px; display: block; font-size: 16px;" />
+
     <textarea id="invoiceText" placeholder="Ví dụ: Đại lý Ford - Ngày 22/05/2026 - Xe 51K-529.01 - 55.000Km... 1. Nhớt Motocraft 5W30 Qty: 8L..."></textarea>
     
     <button onclick="sendToAgentBackend()">⚡ Gửi Agent Xử Lý & Ghi Sổ Tự Động</button>
@@ -29,11 +37,77 @@
 <script>
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwLbAOScGT2SRxTBXUqY6TKrLAl8JWa-OxSkEc1hbOtvy-FTZriEedUYjcdbHGQlTc/exec";
 
+    const textarea = document.getElementById("invoiceText");
+    const statusDiv = document.getElementById("status");
+    const fileInput = document.getElementById("fileInput");
+
+    async function handleFile(file) {
+        if (!file) return;
+        
+        // Cải thiện nhận diện PDF: kiểm tra type hoặc đuôi file
+        if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+            statusDiv.innerHTML = "⏳ Đang đọc nội dung file PDF...";
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let extractedText = "";
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(" ");
+                    extractedText += pageText + "\n";
+                }
+                
+                textarea.value = extractedText.trim();
+                statusDiv.innerHTML = "✅ Đã trích xuất văn bản từ PDF thành công. Bạn có thể chỉnh sửa hoặc gửi đi.";
+            } catch (error) {
+                statusDiv.innerHTML = "❌ Lỗi khi đọc file PDF: " + error.message;
+            }
+        } else if (file.type.startsWith("image/")) {
+            statusDiv.innerHTML = "⚠️ Tính năng trích xuất văn bản từ hình ảnh hiện chưa được hỗ trợ trên giao diện. Vui lòng copy text thủ công hoặc dùng tính năng khác.";
+        } else {
+            // Đọc file text hoặc các file khác
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                textarea.value = event.target.result;
+                statusDiv.innerHTML = "✅ Đã đọc nội dung file.";
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    fileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    // Xử lý sự kiện kéo thả file vào textarea
+    textarea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        textarea.classList.add("dragover");
+    });
+
+    textarea.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        textarea.classList.remove("dragover");
+    });
+
+    textarea.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        textarea.classList.remove("dragover");
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
     function sendToAgentBackend() {
-        let text = document.getElementById("invoiceText").value;
+        let text = textarea.value;
         if(!text) { alert("Vui lòng nhập thông tin hóa đơn!"); return; }
         
-        document.getElementById("status").innerHTML = "⏳ Agent đang đọc hóa đơn, tra cứu danh mục OEM/Hãng và ghi dữ liệu...";
+        statusDiv.innerHTML = "⏳ Agent đang đọc hóa đơn, tra cứu danh mục OEM/Hãng và ghi dữ liệu...";
         
         fetch(GAS_WEB_APP_URL, {
             method: "POST",
@@ -42,11 +116,11 @@
             body: JSON.stringify({ rawText: text })
         })
         .then(response => {
-            document.getElementById("status").innerHTML = "✅ Thành công! Dữ liệu đã được chuẩn hóa tự động và ghi vào Sheet.";
-            document.getElementById("invoiceText").value = "";
+            statusDiv.innerHTML = "✅ Thành công! Dữ liệu đã được chuẩn hóa tự động và ghi vào Sheet.";
+            textarea.value = "";
         })
         .catch(error => {
-            document.getElementById("status").innerHTML = "❌ Lỗi kết nối: " + error;
+            statusDiv.innerHTML = "❌ Lỗi kết nối: " + error;
         });
     }
 </script>
