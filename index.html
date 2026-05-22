@@ -5,11 +5,17 @@
     <title>Agent Nhập Liệu Bảo Dưỡng Siêu Tốc</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 40px; background: #f4f6f9; }
-        .container { max-width: 800px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 800px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 0 auto; transition: max-width 0.3s ease; }
+        .container.expanded { max-width: 1200px; }
         h2 { color: #1f4e78; }
-        textarea { width: 100%; height: 200px; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .split-view { display: flex; gap: 20px; margin-top: 15px; flex-wrap: wrap; }
+        .pdf-preview { flex: 1; display: none; min-width: 300px; }
+        .text-editor { flex: 1; min-width: 300px; display: flex; flex-direction: column; }
+        textarea { width: 100%; height: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical; margin-bottom: 15px; font-family: inherit; }
+        .expanded textarea { height: 430px; }
         textarea.dragover { border: 2px dashed #1f4e78; background: #eef2f5; }
-        button { background: #1f4e78; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        iframe#pdfViewer { width: 100%; height: 500px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #1f4e78; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: auto; }
         button:hover { background: #2f5597; }
         #status { margin-top: 20px; font-weight: bold; }
     </style>
@@ -27,11 +33,22 @@
     
     <input type="file" id="fileInput" accept=".pdf, .txt, text/plain, application/pdf, image/*" style="margin-bottom: 15px; display: block; font-size: 16px;" />
 
-    <textarea id="invoiceText" placeholder="Ví dụ: Đại lý Ford - Ngày 22/05/2026 - Xe 51K-529.01 - 55.000Km... 1. Nhớt Motocraft 5W30 Qty: 8L..."></textarea>
-    
-    <button onclick="sendToAgentBackend()">⚡ Gửi Agent Xử Lý & Ghi Sổ Tự Động</button>
-    
-    <div id="status"></div>
+    <div class="split-view" id="splitView">
+        <div class="pdf-preview" id="pdfPreviewContainer">
+            <h3 style="margin-top: 0; color: #1f4e78; font-size: 1.17em;">Xem trước Bản gốc</h3>
+            <iframe id="pdfViewer" style="display: none;"></iframe>
+            <img id="imageViewer" style="display: none; width: 100%; max-height: 500px; object-fit: contain; border: 1px solid #ccc; border-radius: 4px;" />
+        </div>
+        
+        <div class="text-editor" id="textEditorContainer">
+            <h3 style="margin-top: 0; color: #1f4e78; font-size: 1.17em; display: none;" id="textEditorTitle">Nội dung trích xuất</h3>
+            <textarea id="invoiceText" placeholder="Ví dụ: Đại lý Ford - Ngày 22/05/2026 - Xe 51K-529.01 - 55.000Km... 1. Nhớt Motocraft 5W30 Qty: 8L..."></textarea>
+            
+            <button onclick="sendToAgentBackend()" style="width: 100%;">⚡ Gửi Agent Xử Lý & Ghi Sổ Tự Động</button>
+            
+            <div id="status"></div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -43,9 +60,24 @@
 
     async function handleFile(file) {
         if (!file) return;
+
+        // Reset trạng thái preview
+        document.getElementById('pdfViewer').style.display = 'none';
+        document.getElementById('imageViewer').style.display = 'none';
+        document.getElementById('pdfPreviewContainer').style.display = 'none';
+        document.getElementById('textEditorTitle').style.display = 'none';
+        document.querySelector('.container').classList.remove('expanded');
         
         // Cải thiện nhận diện PDF: kiểm tra type hoặc đuôi file
         if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+            // Hiển thị giao diện xem trước PDF
+            const fileUrl = URL.createObjectURL(file);
+            document.getElementById('pdfViewer').src = fileUrl;
+            document.getElementById('pdfViewer').style.display = 'block';
+            document.getElementById('pdfPreviewContainer').style.display = 'block';
+            document.getElementById('textEditorTitle').style.display = 'block';
+            document.querySelector('.container').classList.add('expanded');
+
             statusDiv.innerHTML = "⏳ Đang đọc nội dung file PDF...";
             try {
                 const arrayBuffer = await file.arrayBuffer();
@@ -60,12 +92,20 @@
                 }
                 
                 textarea.value = extractedText.trim();
-                statusDiv.innerHTML = "✅ Đã trích xuất văn bản từ PDF thành công. Bạn có thể chỉnh sửa hoặc gửi đi.";
+                statusDiv.innerHTML = "✅ Đã trích xuất xong! Hãy đối chiếu với nội dung file PDF bên trái và chỉnh sửa lại nếu cần.";
             } catch (error) {
                 statusDiv.innerHTML = "❌ Lỗi khi đọc file PDF: " + error.message;
             }
         } else if (file.type.startsWith("image/")) {
-            statusDiv.innerHTML = "⚠️ Tính năng trích xuất văn bản từ hình ảnh hiện chưa được hỗ trợ trên giao diện. Vui lòng copy text thủ công hoặc dùng tính năng khác.";
+            // Hiển thị giao diện xem trước Hình ảnh
+            const imageUrl = URL.createObjectURL(file);
+            document.getElementById('imageViewer').src = imageUrl;
+            document.getElementById('imageViewer').style.display = 'block';
+            document.getElementById('pdfPreviewContainer').style.display = 'block';
+            document.getElementById('textEditorTitle').style.display = 'block';
+            document.querySelector('.container').classList.add('expanded');
+
+            statusDiv.innerHTML = "⚠️ Chưa hỗ trợ trích chữ tự động từ ảnh. Bạn vui lòng xem ảnh bên trái và nhập hoặc paste chữ sang bên phải nhé.";
         } else {
             // Đọc file text hoặc các file khác
             const reader = new FileReader();
