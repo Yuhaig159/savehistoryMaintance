@@ -2,520 +2,115 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Agent Nhập Liệu Bảo Dưỡng Siêu Tốc</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Cập Nhật Bảo Dưỡng</title>
     <style>
-        :root {
-            --primary: #1f4e78;
-            --primary-hover: #2f5597;
-            --success: #28a745;
-            --danger: #dc3545;
-            --bg-color: #f4f6f9;
-            --border: #dee2e6;
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: var(--bg-color); color: #333; }
-        .app-container { max-width: 98%; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: max-width 0.3s; }
-        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--primary); padding-bottom: 10px; font-size: 24px; }
-        
-        /* Upload Screen */
-        #uploadScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 20px; }
-        .drop-zone { width: 100%; max-width: 600px; border: 2px dashed var(--primary); border-radius: 8px; padding: 40px; text-align: center; background: #eef2f5; cursor: pointer; transition: all 0.3s; }
-        .drop-zone:hover, .drop-zone.dragover { background: #e2e8f0; border-color: var(--primary-hover); }
-        .file-info { margin-top: 20px; display: none; flex-direction: column; align-items: center; }
-        .file-icon { font-size: 40px; margin-bottom: 10px; color: var(--danger); }
-        .file-name { font-weight: bold; margin-bottom: 15px; font-size: 16px; }
-        
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; font-family: inherit; }
-        button:hover { background: var(--primary-hover); }
-        button.btn-success { background: var(--success); }
-        button.btn-success:hover { background: #218838; }
-        button.btn-danger { background: var(--danger); }
-        button.btn-danger:hover { background: #c82333; }
-        button.btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
-        button.btn-outline:hover { background: var(--primary); color: white; }
-        
-        /* Review Screen */
-        #reviewScreen { display: none; gap: 30px; flex-wrap: nowrap; margin-top: 15px; }
-        .pdf-panel { flex: 0 0 450px; display: flex; flex-direction: column; }
-        iframe#pdfViewer { width: 100%; height: 850px; border: 1px solid var(--border); border-radius: 4px; background: #f8f9fa; }
-        img#imageViewer { width: 100%; max-height: 850px; object-fit: contain; border: 1px solid var(--border); border-radius: 4px; display: none; background: #f8f9fa; }
-        
-        .data-panel { flex: 1; min-width: 700px; display: flex; flex-direction: column; }
-        
-        /* Form Header */
-        .header-form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid var(--border); }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; }
-        .form-group input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; font-family: inherit; }
-        .form-group input:focus { border-color: var(--primary); outline: none; }
-        
-        /* Table Actions */
-        .table-actions { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
-        .table-actions button { padding: 6px 12px; font-size: 13px; }
-        
-        /* Table */
-        .table-container { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 20px; max-height: 550px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
-        th { background: #eef2f5; padding: 10px; text-align: left; font-size: 13px; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 10; color: #333; }
-        td { padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
-        td input, td textarea { width: 100%; border: 1px solid transparent; padding: 6px; box-sizing: border-box; font-size: 14px; border-radius: 3px; font-family: inherit; }
-        td textarea { resize: vertical; min-height: 34px; line-height: 1.4; }
-        td input:focus, td textarea:focus { border: 1px solid var(--primary); outline: none; background: #fff; }
-        td input[type="number"] { text-align: right; }
-        .row-checkbox { cursor: pointer; width: 18px; height: 18px; margin-top: 5px; }
-        
-        /* Totals */
-        .totals-section { align-self: flex-end; background: #f8f9fa; padding: 15px 20px; border-radius: 6px; border: 1px solid var(--border); width: 320px; margin-bottom: 20px; }
-        .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #555; }
-        .total-row span:last-child { font-weight: bold; color: #000; }
-        .total-row.grand-total { font-size: 18px; color: var(--danger); border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px; font-weight: bold; }
-        .total-row.grand-total span:last-child { color: var(--danger); }
-        
-        /* Bottom Actions */
-        .bottom-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
-        
-        /* Utility */
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .loader { display: none; margin: 20px auto; text-align: center; font-weight: bold; color: var(--primary); font-size: 16px; }
+        body { font-family: system-ui, sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center;}
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #1f4e78; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .item-box { border: 1px dashed #1f4e78; padding: 15px; margin-bottom: 10px; background: #f8fbff; border-radius: 5px;}
+        button { background: #1f4e78; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 10px;}
+        button:hover { background: #2b6cb0; }
+        .btn-add { background: #48bb78; }
+        .btn-add:hover { background: #38a169; }
+        #status { margin-top: 15px; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <h2>🤖 Agent Tiếp Nhận Hóa Đơn Bảo Dưỡng (AI Scanner)</h2>
+<div class="card">
+    <h2 style="text-align: center; color: #1f4e78;">📝 NHẬP PHIẾU BẢO DƯỠNG</h2>
     
-    <!-- Màn hình Upload -->
-    <div id="uploadScreen">
-        <input type="file" id="fileInput" accept=".pdf, image/*" style="display: none;" />
-        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-            <div style="font-size: 48px; color: #1f4e78; margin-bottom: 15px;">📄</div>
-            <h3 style="margin: 0 0 10px 0; color: #1f4e78;">Thả file PDF vào đây hoặc Click để chọn file</h3>
-            <p style="margin: 0; color: #666; font-size: 15px;">Hỗ trợ định dạng PDF hoặc Hình ảnh (JPEG, PNG)</p>
-        </div>
-        
-        <div class="file-info" id="fileInfo">
-            <div class="file-icon">📑</div>
-            <div class="file-name" id="fileNameDisplay">Tên file.pdf</div>
-            <button id="btnAnalyze" onclick="analyzePDF()" style="font-size: 16px; padding: 12px 25px;">✨ Phân tích Hóa đơn bằng AI</button>
-        </div>
-        
-        <div class="loader" id="loader">⏳ Đang gửi file lên Gemini AI để bóc tách... Vui lòng đợi vài giây!</div>
+    <div class="form-group"><label>Biển Số Xe:</label><input type="text" id="bienSo" placeholder="VD: 51K - 529.01"></div>
+    <div class="form-group"><label>Đơn Vị Thực Hiện:</label><input type="text" id="donVi" placeholder="VD: Toyota Tân Cảng"></div>
+    <div style="display: flex; gap: 10px;">
+        <div class="form-group" style="flex: 1;"><label>Ngày:</label><input type="date" id="ngay"></div>
+        <div class="form-group" style="flex: 1;"><label>Số Km:</label><input type="number" id="soKm" placeholder="VD: 55000"></div>
     </div>
 
-    <!-- Màn hình Review -->
-    <div id="reviewScreen">
-        <!-- Bên trái: Xem trước PDF -->
-        <div class="pdf-panel">
-            <h3 style="margin-top: 0; font-size: 16px; color: #1f4e78;">Bản gốc Hóa Đơn</h3>
-            <iframe id="pdfViewer"></iframe>
-            <img id="imageViewer" />
-        </div>
-        
-        <!-- Bên phải: Bảng Review & Chỉnh sửa -->
-        <div class="data-panel">
-            <h3 style="margin-top: 0; font-size: 16px; color: #1f4e78;">Dữ liệu Trích Xuất (Kiểm tra & Chỉnh sửa)</h3>
-            
-            <!-- Header Form -->
-            <div class="header-form">
-                <div class="form-group"><label>Số phiếu / Hóa đơn</label><input type="text" id="hdrSoPhieu"></div>
-                <div class="form-group"><label>Ngày</label><input type="date" id="hdrNgay"></div>
-                <div class="form-group"><label>Đơn vị sửa chữa (Đại lý)</label><input type="text" id="hdrDonVi"></div>
-                <div class="form-group"><label>Tên khách hàng</label><input type="text" id="hdrTenKH"></div>
-                <div class="form-group"><label>Địa chỉ</label><input type="text" id="hdrDiaChi"></div>
-                <div class="form-group"><label>Điện thoại</label><input type="text" id="hdrDienThoai"></div>
-                <div class="form-group"><label>Biển số xe</label><input type="text" id="hdrBienSo"></div>
-                <div class="form-group"><label>Loại xe</label><input type="text" id="hdrLoaiXe"></div>
-                <div class="form-group"><label>Số khung</label><input type="text" id="hdrSoKhung"></div>
-                <div class="form-group"><label>Số Km</label><input type="number" id="hdrSoKm"></div>
+    <hr>
+    <div id="itemsContainer">
+        <div class="item-box">
+            <div class="form-group"><label>Chi tiết công việc (Hãng ghi):</label><input type="text" class="chiTiet" placeholder="VD: SP 10W30"></div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>Số lượng:</label><input type="number" class="soLuong" value="1" step="0.1"></div>
+                <div class="form-group" style="flex: 1;"><label>Tổng tiền:</label><input type="number" class="tongTien" placeholder="VNĐ"></div>
             </div>
-            
-            <!-- Table Actions -->
-            <div class="table-actions">
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn-outline" onclick="toggleAllCheckboxes(true)">☑️ Chọn tất cả</button>
-                    <button class="btn-outline" onclick="toggleAllCheckboxes(false)">☐ Bỏ chọn tất cả</button>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn-outline" onclick="addManualRow()">➕ Thêm dòng</button>
-                    <button class="btn-outline btn-danger" style="color: #dc3545; border-color: #dc3545;" onclick="deleteSelectedRows()">🗑️ Xóa dòng chọn</button>
-                </div>
-            </div>
-            
-            <!-- Table -->
-            <div class="table-container">
-                <table id="dataTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 30px; text-align: center;"><input type="checkbox" id="checkAllMaster" checked class="row-checkbox" onclick="toggleAllCheckboxes(this.checked)"></th>
-                            <th style="width: 40px;" class="text-center">STT</th>
-                            <th style="width: 100px;">Mã PT</th>
-                            <th>Diễn giải</th>
-                            <th style="width: 60px;">SL</th>
-                            <th style="width: 70px;">ĐVT</th>
-                            <th style="width: 110px;">Đơn giá</th>
-                            <th style="width: 60px;">%VAT</th>
-                            <th style="width: 120px;" class="text-right">Thành tiền</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <!-- Rendered via JS -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Totals -->
-            <div class="totals-section">
-                <div class="total-row"><span>Tổng trước thuế:</span> <span id="lblTongTruoc">0</span></div>
-                <div class="total-row"><span>Tiền chiết khấu:</span> <span id="lblTienCK">0</span></div>
-                <div class="total-row"><span>Tiền thuế VAT:</span> <span id="lblTienThue">0</span></div>
-                <div class="total-row grand-total"><span>Tổng sau thuế:</span> <span id="lblTongSau">0</span></div>
-            </div>
-            
-            <!-- Bottom Actions -->
-            <div class="bottom-actions">
-                <button class="btn-outline" onclick="exportJSON()">📋 Xuất JSON</button>
-                <button class="btn-danger" onclick="resetApp()">🔄 Bỏ qua & Chọn file khác</button>
-                <button class="btn-success" onclick="confirmAndSave()" style="font-size: 16px; padding: 10px 30px;">💾 Xác nhận & Lưu vào Sheets</button>
-            </div>
+            <input type="hidden" class="donViTinh" value="Cái">
+            <input type="hidden" class="phanLoai" value="Mua sắm">
         </div>
     </div>
+    
+    <button class="btn-add" onclick="addItem()">+ Thêm dòng chi tiết mới</button>
+    <button onclick="submitData()">🚀 GỬI DỮ LIỆU LÊN HỆ THỐNG</button>
+    <div id="status"></div>
 </div>
 
 <script>
-    // URL Backend Google Apps Script của bạn
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwLbAOScGT2SRxTBXUqY6TKrLAl8JWa-OxSkEc1hbOtvy-FTZriEedUYjcdbHGQlTc/exec";
-    
-    let currentFile = null;
-    let extractedItems = [];
-    
-    // --- UPLOAD HANDLERS ---
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
+    // BẠN HÃY DÁN ĐƯỜNG LINK WEB APP URL CỦA GOOGLE APPS SCRIPT VÀO ĐÂY:
+    const GAS_URL = "DÁN_LINK_WEB_APP_CỦA_BẠN_VÀO_ĐÂY";
 
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            handleFileSelection(e.dataTransfer.files[0]);
-        }
-    });
-
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files.length > 0) {
-            handleFileSelection(e.target.files[0]);
-        }
-    });
-
-    function handleFileSelection(file) {
-        if (!file) return;
-        currentFile = file;
-        
-        document.getElementById('fileNameDisplay').textContent = file.name;
-        dropZone.style.display = 'none';
-        document.getElementById('fileInfo').style.display = 'flex';
-        
-        const fileUrl = URL.createObjectURL(file);
-        if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-            document.getElementById('pdfViewer').src = fileUrl;
-            document.getElementById('pdfViewer').style.display = 'block';
-            document.getElementById('imageViewer').style.display = 'none';
-        } else {
-            document.getElementById('imageViewer').src = fileUrl;
-            document.getElementById('imageViewer').style.display = 'block';
-            document.getElementById('pdfViewer').style.display = 'none';
-        }
+    function addItem() {
+        const box = document.querySelector('.item-box').cloneNode(true);
+        box.querySelectorAll('input').forEach(input => input.value = '');
+        document.getElementById('itemsContainer').appendChild(box);
     }
 
-    function resetApp() {
-        currentFile = null;
-        extractedItems = [];
-        document.getElementById('fileInput').value = '';
-        document.getElementById('uploadScreen').style.display = 'flex';
-        document.getElementById('reviewScreen').style.display = 'none';
-        document.getElementById('dropZone').style.display = 'block';
-        document.getElementById('fileInfo').style.display = 'none';
-        document.getElementById('loader').style.display = 'none';
-    }
-
-    // --- AGENT EXTRACTION (MOCK DATA) ---
-    function analyzePDF() {
-        if (!currentFile) {
-            alert("Vui lòng chọn file trước khi phân tích!");
+    function submitData() {
+        const statusEl = document.getElementById("status");
+        if (GAS_URL === "DÁN_LINK_WEB_APP_CỦA_BẠN_VÀO_ĐÂY") {
+            statusEl.style.color = "red";
+            statusEl.innerText = "Lỗi: Bạn chưa cấu hình GAS_URL trong file HTML!";
             return;
         }
 
-        document.getElementById('fileInfo').style.display = 'none';
-        document.getElementById('loader').style.display = 'block';
-        
-        // Mô phỏng quá trình AI đọc PDF mất 1.5s
-        setTimeout(() => {
-            // Dữ liệu mẫu (Mock Data) Long Khánh Ford
-            document.getElementById('hdrSoPhieu').value = "51D94004_20052026-2";
-            document.getElementById('hdrNgay').value = "2026-05-20";
-            if(document.getElementById('hdrDonVi')) document.getElementById('hdrDonVi').value = "LONG KHÁNH FORD";
-            document.getElementById('hdrTenKH').value = "CTY CỔ PHẦN KHỬ TRÙNG VIỆT NAM";
-            document.getElementById('hdrDiaChi').value = "29 Tôn Đức Thắng, Phường Sài Gòn, HCM";
-            document.getElementById('hdrDienThoai').value = "0396417859";
-            document.getElementById('hdrBienSo').value = "51D94004";
-            document.getElementById('hdrLoaiXe').value = "RANGER XLS AT 2.0L AT 4X2";
-            document.getElementById('hdrSoKhung').value = "RL2UMFC50RDR79911";
-            document.getElementById('hdrSoKm').value = "106024";
-            
-            extractedItems = [
-                { id: 1, selected: true, ma: "AXL5W30V4", ten: "Nhớt máy 5W-30", sl: 8.10, dv: "LÍT", gia: 213208, vat: 8, gg: 0 },
-                { id: 2, selected: true, ma: "JU2Z6731B", ten: "LỌC NHỚT RG, EV 12", sl: 1.00, dv: "CÁI", gia: 185000, vat: 8, gg: 0 },
-                { id: 3, selected: true, ma: "05.HGV-VSP-C", ten: "Chất tẩy rửa thắng", sl: 1.00, dv: "CHAI", gia: 150000, vat: 8, gg: 0 },
-                { id: 4, selected: true, ma: "N1WZ17528B", ten: "CHỔI GẠT MƯA PHẢI", sl: 1.00, dv: "CÁI", gia: 445000, vat: 8, gg: 0 },
-                { id: 5, selected: true, ma: "N1WZ17528A", ten: "CHỔI GẠT MƯA TRÁI", sl: 1.00, dv: "CÁI", gia: 494000, vat: 8, gg: 0 },
-                { id: 6, selected: true, ma: "00014", ten: "Công Bảo dưỡng cấp 100K + vệ sinh thắng tra mỡ ắc", sl: 2.00, dv: "Giờ", gia: 390000, vat: 8, gg: 0 },
-                { id: 7, selected: true, ma: "88007", ten: "Mỡ bò ác thắng + kiểm tra đào bánh", sl: 1.00, dv: "Lần", gia: 100000, vat: 8, gg: 0 },
-                { id: 8, selected: true, ma: "09001", ten: "FSA: K", sl: 1.00, dv: "Giờ", gia: 0, vat: 8, gg: 0 },
-                { id: 9, selected: true, ma: "09001", ten: "KT xe chạy 50-60km/h đạp ga tăng tốc rung giật động cơ", sl: 1.00, dv: "Giờ", gia: 0, vat: 8, gg: 0 }
-            ];
-            
-            renderTable();
-            
-            document.getElementById('loader').style.display = 'none';
-            document.getElementById('uploadScreen').style.display = 'none';
-            document.getElementById('reviewScreen').style.display = 'flex';
-        }, 1500);
-    }
-
-    // --- RENDER TABLE & CALCULATION ---
-    function formatMoney(num) {
-        return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        
-        extractedItems.forEach((item, index) => {
-            const tr = document.createElement('tr');
-            
-            // Calculate Item Total
-            let sl = parseFloat(item.sl) || 0;
-            let gia = parseFloat(item.gia) || 0;
-            let gg = parseFloat(item.gg) || 0;
-            let tienChietKhau = (sl * gia) * (gg / 100);
-            let thanhTien = (sl * gia) - tienChietKhau;
-            
-            // Escape quotes to prevent HTML layout break on re-render
-            let safeMa = (item.ma || "").toString().replace(/"/g, '&quot;');
-            let safeTen = (item.ten || "").toString().replace(/"/g, '&quot;');
-            let safeDv = (item.dv || "").toString().replace(/"/g, '&quot;');
-            
-            // Highlight row if missing crucial data
-            if (!item.ten || item.ten.trim() === "" || (!item.ma && gia > 0)) {
-                tr.style.backgroundColor = "#fff3cd"; // Yellow highlight
+        const items = [];
+        document.querySelectorAll('.item-box').forEach(box => {
+            let chiTiet = box.querySelector('.chiTiet').value;
+            if (chiTiet) {
+                items.push({
+                    chiTiet: chiTiet,
+                    soLuong: box.querySelector('.soLuong').value || 1,
+                    tongTien: box.querySelector('.tongTien').value || 0,
+                    donViTinh: box.querySelector('.donViTinh').value,
+                    phanLoai: box.querySelector('.phanLoai').value
+                });
             }
-            
-            tr.innerHTML = `
-                <td class="text-center"><input type="checkbox" class="row-checkbox" ${item.selected ? 'checked' : ''} onchange="updateSelection(${index}, this.checked)"></td>
-                <td class="text-center" style="padding-top: 13px;">${index + 1}</td>
-                <td><input type="text" value="${safeMa}" onchange="updateItem(${index}, 'ma', this.value)" style="${!item.ma ? 'background:#fff3cd' : ''}"></td>
-                <td><textarea rows="2" onchange="updateItem(${index}, 'ten', this.value)" style="${!item.ten ? 'background:#fff3cd' : ''}">${safeTen}</textarea></td>
-                <td><input type="number" step="0.01" value="${item.sl}" oninput="updateItem(${index}, 'sl', this.value)"></td>
-                <td><input type="text" value="${safeDv}" onchange="updateItem(${index}, 'dv', this.value)"></td>
-                <td><input type="number" value="${item.gia}" oninput="updateItem(${index}, 'gia', this.value)"></td>
-                <td><input type="number" value="${item.vat}" oninput="updateItem(${index}, 'vat', this.value)"></td>
-                <td><input type="number" value="${item.gg}" oninput="updateItem(${index}, 'gg', this.value)"></td>
-                <td class="text-right" style="font-weight: 600; color: #1f4e78; padding-top: 13px;">${formatMoney(thanhTien)}</td>
-            `;
-            tbody.appendChild(tr);
         });
-        
-        calculateTotals();
-    }
 
-    function updateItem(index, field, value) {
-        if (field === 'sl' || field === 'gia' || field === 'vat' || field === 'gg') {
-            extractedItems[index][field] = parseFloat(value) || 0;
-            // Update thành tiền ô cuối cùng
-            const row = document.getElementById('tableBody').children[index];
-            let sl = extractedItems[index].sl || 0;
-            let gia = extractedItems[index].gia || 0;
-            let gg = extractedItems[index].gg || 0;
-            let tienChietKhau = (sl * gia) * (gg / 100);
-            let thanhTien = (sl * gia) - tienChietKhau;
-            
-            row.lastElementChild.textContent = formatMoney(thanhTien);
-            calculateTotals();
-        } else {
-            extractedItems[index][field] = value;
-            // Remove highlight if user fills missing data
-            const row = document.getElementById('tableBody').children[index];
-            if (extractedItems[index].ten && extractedItems[index].ten.trim() !== "") {
-                row.style.backgroundColor = "";
-                row.children[3].children[0].style.backgroundColor = "";
-            }
-            if (extractedItems[index].ma && extractedItems[index].ma.trim() !== "") {
-                row.children[2].children[0].style.backgroundColor = "";
-            }
+        if (items.length === 0) {
+            alert("Vui lòng nhập ít nhất 1 chi tiết công việc!"); return;
         }
-    }
 
-    function updateSelection(index, isChecked) {
-        extractedItems[index].selected = isChecked;
-        calculateTotals();
-        document.getElementById('checkAllMaster').checked = extractedItems.every(i => i.selected);
-    }
-
-    function toggleAllCheckboxes(checked) {
-        document.getElementById('checkAllMaster').checked = checked;
-        extractedItems.forEach(item => item.selected = checked);
-        
-        const checkboxes = document.querySelectorAll('.row-checkbox');
-        checkboxes.forEach(cb => cb.checked = checked);
-        calculateTotals();
-    }
-
-    function calculateTotals() {
-        let tongTruoc = 0;
-        let tienThue = 0;
-        let tongCK = 0;
-        
-        extractedItems.forEach(item => {
-            if (item.selected) {
-                let sl = parseFloat(item.sl) || 0;
-                let gia = parseFloat(item.gia) || 0;
-                let vat = parseFloat(item.vat) || 0;
-                let gg = parseFloat(item.gg) || 0;
-                
-                let ttTruocThue = sl * gia;
-                let ck = ttTruocThue * (gg / 100);
-                let ttSauCK = ttTruocThue - ck;
-                let thue = ttSauCK * (vat / 100);
-                
-                tongTruoc += ttTruocThue;
-                tongCK += ck;
-                tienThue += thue;
-            }
-        });
-        
-        let tongSau = tongTruoc - tongCK + tienThue;
-        
-        document.getElementById('lblTongTruoc').textContent = formatMoney(tongTruoc);
-        document.getElementById('lblTienCK').textContent = formatMoney(tongCK);
-        document.getElementById('lblTienThue').textContent = formatMoney(tienThue);
-        document.getElementById('lblTongSau').textContent = formatMoney(tongSau);
-    }
-
-    // --- TABLE ACTIONS ---
-    function addManualRow() {
-        extractedItems.push({
-            id: Date.now(),
-            selected: true,
-            ma: "",
-            ten: "Hạng mục mới",
-            sl: 1,
-            dv: "Cái",
-            gia: 0,
-            vat: 8,
-            gg: 0
-        });
-        renderTable();
-    }
-
-    function deleteSelectedRows() {
-        if (confirm("Xóa các dòng đang được chọn khỏi danh sách?")) {
-            extractedItems = extractedItems.filter(item => !item.selected);
-            document.getElementById('checkAllMaster').checked = false;
-            renderTable();
-        }
-    }
-
-    // --- API EXPORT / SAVE ---
-    function getFinalData() {
-        const selectedItems = extractedItems.filter(item => item.selected).map((item, index) => {
-            let sl = item.sl || 0;
-            let gia = item.gia || 0;
-            let gg = item.gg || 0;
-            let ck = (sl * gia) * (gg / 100);
-            return {
-                stt: index + 1,
-                ma_pt: item.ma,
-                dien_giai: item.ten,
-                sl: sl,
-                dvt: item.dv,
-                don_gia: gia,
-                vat: item.vat || 0,
-                gg: gg,
-                thanh_tien: (sl * gia) - ck
-            };
-        });
-        
-        const tongTruocText = document.getElementById('lblTongTruoc').textContent.replace(/,/g, '');
-        const tienCKText = document.getElementById('lblTienCK').textContent.replace(/,/g, '');
-        const tienThueText = document.getElementById('lblTienThue').textContent.replace(/,/g, '');
-        const tongSauText = document.getElementById('lblTongSau').textContent.replace(/,/g, '');
-
-        return {
-            action: "save",
-            header: {
-                so_phieu: document.getElementById('hdrSoPhieu').value,
-                ngay: document.getElementById('hdrNgay').value,
-                ten_khach_hang: document.getElementById('hdrTenKH').value,
-                dia_chi: document.getElementById('hdrDiaChi').value,
-                dien_thoai: document.getElementById('hdrDienThoai').value,
-                bien_so: document.getElementById('hdrBienSo').value,
-                loai_xe: document.getElementById('hdrLoaiXe').value,
-                so_khung: document.getElementById('hdrSoKhung').value,
-                so_km: parseFloat(document.getElementById('hdrSoKm').value) || 0,
-                don_vi_sua_chua: document.getElementById('hdrDonVi').value // Retained extra field
-            },
-            hang_muc: selectedItems,
-            tong_tien: {
-                truoc_thue: parseFloat(tongTruocText),
-                tien_ck: parseFloat(tienCKText),
-                tien_thue: parseFloat(tienThueText),
-                sau_thue: parseFloat(tongSauText)
-            },
-            saved_at: new Date().toISOString()
+        const payload = {
+            bienSo: document.getElementById('bienSo').value,
+            donVi: document.getElementById('donVi').value,
+            ngay: document.getElementById('ngay').value,
+            soKm: document.getElementById('soKm').value,
+            items: items
         };
-    }
 
-    function exportJSON() {
-        const data = getFinalData();
-        console.log("JSON DATA:", data);
-        alert("Đã xuất JSON ra cửa sổ Console (nhấn F12 > Console để xem toàn bộ).\n\n" + JSON.stringify(data, null, 2).substring(0, 400) + "...");
-    }
+        statusEl.style.color = "#1f4e78";
+        statusEl.innerText = "⏳ Đang gửi và đối chiếu dữ liệu...";
 
-    function confirmAndSave() {
-        const payload = getFinalData();
-        if (payload.hang_muc.length === 0) {
-            alert("Vui lòng tích chọn ít nhất 1 hạng mục để lưu vào Google Sheets!");
-            return;
-        }
-        
-        const btn = document.querySelector('.btn-success');
-        const oldText = btn.innerHTML;
-        btn.innerHTML = "⏳ Đang ghi vào Google Sheets...";
-        btn.disabled = true;
-
-        fetch(GAS_WEB_APP_URL, {
-            method: "POST",
+        fetch(GAS_URL, {
+            method: 'POST',
             body: JSON.stringify(payload)
         })
         .then(res => res.json())
         .then(data => {
-            if (data.status === "error") {
-                alert("❌ Lỗi từ server: " + data.message);
-            } else {
-                alert(`✅ LƯU THÀNH CÔNG!\n\nĐã lưu ${payload.hang_muc.length} hạng mục.\nTổng tiền: ${document.getElementById('lblTongSau').textContent} VNĐ\nDữ liệu đã được ghi vào Google Sheets.`);
-            }
-            btn.innerHTML = oldText;
-            btn.disabled = false;
-        }).catch(err => {
-            alert("❌ Lỗi mạng hoặc lỗi hệ thống. Vui lòng kiểm tra lại URL GAS và thử lại.\nLỗi chi tiết: " + err);
-            btn.innerHTML = oldText;
-            btn.disabled = false;
+            statusEl.style.color = "green";
+            statusEl.innerText = "✅ Thành công! Dữ liệu đã tự động Mapping vào Sheet.";
+            // Reset form
+            document.querySelectorAll('input').forEach(input => input.value = '');
+        })
+        .catch(err => {
+            statusEl.style.color = "red";
+            statusEl.innerText = "❌ Lỗi: Có thể do mạng hoặc cấu hình CORS.";
         });
     }
-
 </script>
 </body>
 </html>
