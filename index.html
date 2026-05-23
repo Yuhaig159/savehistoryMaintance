@@ -10,7 +10,19 @@
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; color: #1f4e78; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .item-box { border: 1px dashed #1f4e78; padding: 15px; margin-bottom: 10px; background: #f8fbff; border-radius: 5px;}
+        .item-box { border: 1px dashed #1f4e78; padding: 15px; margin-bottom: 15px; background: #f8fbff; border-radius: 5px;}
+        
+        /* Cải tiến UI cho tính năng mới */
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .btn-delete { background: #e53e3e; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; margin: 0; }
+        .btn-delete:hover { background: #c53030; }
+        
+        .mapping-box { background: #eef2f5; padding: 12px; border-radius: 5px; margin-top: 15px; border: 1px solid #cdd4db; }
+        .map-label { font-size: 12px; font-weight: bold; color: #555; }
+        .btn-add-map { background: #17a2b8; color: white; border: none; padding: 8px; width: 100%; border-radius: 4px; font-size: 13px; margin-top: 10px; cursor: pointer; transition: 0.2s;}
+        .btn-add-map:hover { background: #138496; }
+        .btn-add-map:disabled { background: #a0aec0; cursor: not-allowed; }
+
         button { background: #1f4e78; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 10px; transition: 0.2s;}
         button:hover { background: #2b6cb0; }
         button:disabled { background: #a0aec0; cursor: not-allowed; }
@@ -20,18 +32,15 @@
         .btn-scan:hover { background: #d35400; }
         #status, #scanStatus { margin-top: 15px; text-align: center; font-weight: bold; }
         
-        .upload-section {
-            border: 2px dashed #1f4e78;
-            padding: 20px;
-            text-align: center;
-            border-radius: 8px;
-            background: #eef2f5;
-            margin-bottom: 20px;
-        }
+        .upload-section { border: 2px dashed #1f4e78; padding: 20px; text-align: center; border-radius: 8px; background: #eef2f5; margin-bottom: 20px; }
         .upload-section input[type="file"] { border: none; padding: 0; background: transparent; }
     </style>
 </head>
 <body>
+
+<datalist id="heThongList"></datalist>
+<datalist id="hangMucList"></datalist>
+<datalist id="loaiVatTuList"></datalist>
 
 <div class="card">
     <h2 style="text-align: center; color: #1f4e78;">📝 NHẬP PHIẾU BẢO DƯỠNG</h2>
@@ -52,16 +61,7 @@
 
     <hr>
     <div id="itemsContainer">
-        <div class="item-box">
-            <div class="form-group"><label>Chi tiết công việc (Hãng ghi):</label><input type="text" class="chiTiet" placeholder="VD: SP 10W30"></div>
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group" style="flex: 1;"><label>Số lượng:</label><input type="number" class="soLuong" value="1" step="0.1"></div>
-                <div class="form-group" style="flex: 1;"><label>Tổng tiền:</label><input type="number" class="tongTien" placeholder="VNĐ"></div>
-            </div>
-            <input type="hidden" class="donViTinh" value="Cái">
-            <input type="hidden" class="phanLoai" value="Mua sắm">
         </div>
-    </div>
     
     <button class="btn-add" onclick="addItem()">+ Thêm dòng chi tiết mới</button>
     <button onclick="submitData()">🚀 GỬI DỮ LIỆU LÊN HỆ THỐNG</button>
@@ -70,16 +70,178 @@
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwLJldZEMrWFq13VyJ24rFuyxwp47hM4GzciSSr_rbCJlgkisTkSoeiVv_ggzKos79o/exec";
+    
+    // Lưu trữ CSDL Mapping tải từ Google Sheets
+    let dictRules = []; 
 
-    // ----------------------------------------------------
-    // HÀM MỚI: QUÉT VÀ TRÍCH XUẤT DỮ LIỆU BẰNG AI
-    // ----------------------------------------------------
+    // CHẠY NGAY KHI MỞ WEB: Tải dữ liệu Mapping
+    window.onload = function() {
+        document.getElementById('itemsContainer').innerHTML = ''; 
+        addItem(); // Tạo sẵn 1 dòng trống
+        
+        const statusEl = document.getElementById("status");
+        statusEl.innerText = "⏳ Đang tải dữ liệu Mapping từ hệ thống...";
+        statusEl.style.color = "#e67e22";
+        
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "get_mapping" })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === "success") {
+                dictRules = data.data.rules || [];
+                dictRules.sort((a, b) => b.keyword.length - a.keyword.length); // Ưu tiên từ dài
+                populateDatalists(dictRules);
+                statusEl.innerText = "";
+            }
+        })
+        .catch(err => {
+            statusEl.innerText = "⚠️ Chưa kết nối được CSDL Mapping (Hãy cập nhật Backend).";
+        });
+    };
+
+    // Hàm cập nhật các lựa chọn Dropdown
+    function populateDatalists(rules) {
+        let heThongSet = new Set();
+        let hangMucSet = new Set();
+        let loaiVatTuSet = new Set();
+
+        rules.forEach(r => {
+            if(r.heThong && r.heThong !== "Chưa phân loại") heThongSet.add(r.heThong);
+            if(r.hangMuc && r.hangMuc !== "Chưa phân loại") hangMucSet.add(r.hangMuc);
+            if(r.loaiVatTu && r.loaiVatTu !== "Chưa phân loại") loaiVatTuSet.add(r.loaiVatTu);
+        });
+
+        document.getElementById('heThongList').innerHTML = [...heThongSet].map(v => `<option value="${v}">`).join('');
+        document.getElementById('hangMucList').innerHTML = [...hangMucSet].map(v => `<option value="${v}">`).join('');
+        document.getElementById('loaiVatTuList').innerHTML = [...loaiVatTuSet].map(v => `<option value="${v}">`).join('');
+    }
+
+    // Hàm tự động Mapping nội bộ trên Frontend
+    function autoMap(keyword) {
+        if(!keyword) return { heThong: "Chưa phân loại", hangMuc: "Chưa phân loại", loaiVatTu: "Chưa phân loại" };
+        keyword = keyword.toLowerCase().trim();
+        for(let r of dictRules) {
+            if(keyword.includes(r.keyword)) {
+                return { heThong: r.heThong, hangMuc: r.hangMuc, loaiVatTu: r.loaiVatTu };
+            }
+        }
+        return { heThong: "Chưa phân loại", hangMuc: "Chưa phân loại", loaiVatTu: "Chưa phân loại" };
+    }
+
+    // Cập nhật lại UI khi người dùng gõ tay
+    function handleTypingChiTiet(inputEl) {
+        const box = inputEl.closest('.item-box');
+        const mapped = autoMap(inputEl.value);
+        
+        box.querySelector('.map-heThong').value = mapped.heThong;
+        box.querySelector('.map-hangMuc').value = mapped.hangMuc;
+        box.querySelector('.map-loaiVatTu').value = mapped.loaiVatTu;
+        
+        // Reset nút lưu mapping
+        const btnMap = box.querySelector('.btn-add-map');
+        btnMap.innerText = "💾 Thêm từ khóa này vào CSDL Mapping";
+        btnMap.style.background = "#17a2b8";
+        btnMap.disabled = false;
+    }
+
+    // THÊM DÒNG MỚI (Hỗ trợ nhúng data từ AI)
+    function addItem(itemData = null) {
+        const container = document.getElementById('itemsContainer');
+        const box = document.createElement('div');
+        box.className = 'item-box';
+        
+        const chiTiet = itemData ? (itemData.ten || '') : '';
+        const soLuong = itemData ? (itemData.sl || 1) : 1;
+        const tongTien = itemData ? (soLuong * (itemData.gia || 0)) : '';
+        const donVi = itemData ? (itemData.dv || 'Cái') : 'Cái';
+        
+        let mapped = autoMap(chiTiet);
+
+        box.innerHTML = `
+            <div class="item-header">
+                <label style="margin: 0;">Chi tiết công việc (Hãng ghi):</label>
+                <button type="button" class="btn-delete" onclick="this.closest('.item-box').remove()">❌ Xóa dòng</button>
+            </div>
+            <input type="text" class="chiTiet" value="${chiTiet}" placeholder="VD: SP 10W30" oninput="handleTypingChiTiet(this)">
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <div class="form-group" style="flex: 1; margin: 0;"><label>Số lượng:</label><input type="number" class="soLuong" value="${soLuong}" step="0.1"></div>
+                <div class="form-group" style="flex: 1; margin: 0;"><label>Tổng tiền:</label><input type="number" class="tongTien" value="${tongTien}" placeholder="VNĐ"></div>
+            </div>
+
+            <div class="mapping-box">
+                <div style="font-size: 13px; color: #1f4e78; font-weight: bold; margin-bottom: 8px;">🔍 Kết quả Phân loại (Sửa & Chọn qua Dropdown):</div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1; margin: 0;">
+                        <label class="map-label">Hệ thống</label>
+                        <input type="text" class="map-heThong" list="heThongList" value="${mapped.heThong}" placeholder="Chọn/Nhập">
+                    </div>
+                    <div class="form-group" style="flex: 1; margin: 0;">
+                        <label class="map-label">Tên hạng mục</label>
+                        <input type="text" class="map-hangMuc" list="hangMucList" value="${mapped.hangMuc}" placeholder="Chọn/Nhập">
+                    </div>
+                    <div class="form-group" style="flex: 1; margin: 0;">
+                        <label class="map-label">Loại vật tư</label>
+                        <input type="text" class="map-loaiVatTu" list="loaiVatTuList" value="${mapped.loaiVatTu}" placeholder="Chọn/Nhập">
+                    </div>
+                </div>
+                <button type="button" class="btn-add-map" onclick="addNewMapping(this)">💾 Thêm từ khóa này vào CSDL Mapping</button>
+            </div>
+
+            <input type="hidden" class="donViTinh" value="${donVi}">
+            <input type="hidden" class="phanLoai" value="Mua sắm">
+        `;
+        container.appendChild(box);
+    }
+
+    // LƯU TỪ KHÓA MỚI VÀO SHEET MAPPING
+    function addNewMapping(btn) {
+        const box = btn.closest('.item-box');
+        const keyword = box.querySelector('.chiTiet').value.trim();
+        const heThong = box.querySelector('.map-heThong').value.trim();
+        const hangMuc = box.querySelector('.map-hangMuc').value.trim();
+        const loaiVatTu = box.querySelector('.map-loaiVatTu').value.trim();
+
+        if(!keyword) { alert("Vui lòng nhập Chi tiết công việc trước khi lưu!"); return; }
+        
+        btn.innerText = "⏳ Đang lưu vào hệ thống...";
+        btn.disabled = true;
+
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "add_mapping",
+                keyword: keyword,
+                heThong: heThong,
+                hangMuc: hangMuc,
+                loaiVatTu: loaiVatTu
+            })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if(res.status === "success") {
+                btn.innerText = "✅ Đã lưu vào Sheet Mapping thành công";
+                btn.style.background = "#28a745";
+                
+                // Cập nhật mảng nội bộ & Dropdown không cần load lại trang
+                dictRules.push({ keyword: keyword.toLowerCase(), heThong, hangMuc, loaiVatTu });
+                dictRules.sort((a, b) => b.keyword.length - a.keyword.length);
+                populateDatalists(dictRules);
+            } else { throw new Error(res.message); }
+        })
+        .catch(e => {
+            btn.innerText = "❌ Lỗi: Có thể backend chưa cấu hình add_mapping";
+            btn.style.background = "#e53e3e";
+            btn.disabled = false;
+        });
+    }
+
+    // QUÉT TÀI LIỆU
     function scanDocument() {
         const fileInput = document.getElementById('fileInput');
-        if (fileInput.files.length === 0) {
-            alert("Vui lòng chọn một file PDF hoặc Hình ảnh trước khi quét!");
-            return;
-        }
+        if (fileInput.files.length === 0) { alert("Vui lòng chọn file!"); return; }
 
         const file = fileInput.files[0];
         const scanStatus = document.getElementById('scanStatus');
@@ -90,104 +252,47 @@
 
         const reader = new FileReader();
         reader.onload = function(e) {
-            // Lấy chuỗi base64 của file
             const base64Content = e.target.result.split(',')[1];
-            
-            const payload = {
-                action: "analyze_pdf", // Gọi nhánh action AI trên GAS
-                fileBase64: base64Content,
-                mimeType: file.type
-            };
-
             fetch(GAS_URL, {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ action: "analyze_pdf", fileBase64: base64Content, mimeType: file.type })
             })
             .then(res => res.json())
             .then(data => {
                 scanStatus.style.display = "none";
                 btnScan.disabled = false;
 
-                if (data.status === "error") {
-                    alert("❌ Lỗi trích xuất AI: " + data.message);
-                    return;
-                }
+                if (data.status === "error") { alert("❌ Lỗi trích xuất AI: " + data.message); return; }
 
                 const result = data.data;
-
-                // 1. Điền thông tin chung (Header)
                 document.getElementById('bienSo').value = result.header.bien_so || '';
                 document.getElementById('donVi').value = result.header.don_vi_sua_chua || '';
                 document.getElementById('ngay').value = result.header.ngay || '';
                 document.getElementById('soKm').value = result.header.so_km || '';
 
-                // 2. Điền thông tin chi tiết (Xóa danh sách cũ và tạo mới)
                 const container = document.getElementById('itemsContainer');
-                container.innerHTML = ''; // Làm sạch container
+                container.innerHTML = ''; 
                 
                 if (result.hang_muc && result.hang_muc.length > 0) {
-                    result.hang_muc.forEach(item => {
-                        const itemBox = document.createElement('div');
-                        itemBox.className = 'item-box';
-                        
-                        // Tính tổng tiền cho từng mục (Số lượng * Đơn giá)
-                        const soLuong = item.sl || 1;
-                        const tongTienItem = soLuong * (item.gia || 0);
-
-                        itemBox.innerHTML = `
-                            <div class="form-group"><label>Chi tiết công việc (Hãng ghi):</label><input type="text" class="chiTiet" value="${item.ten || ''}"></div>
-                            <div style="display: flex; gap: 10px;">
-                                <div class="form-group" style="flex: 1;"><label>Số lượng:</label><input type="number" class="soLuong" value="${soLuong}" step="0.1"></div>
-                                <div class="form-group" style="flex: 1;"><label>Tổng tiền:</label><input type="number" class="tongTien" value="${tongTienItem}"></div>
-                            </div>
-                            <input type="hidden" class="donViTinh" value="${item.dv || 'Cái'}">
-                            <input type="hidden" class="phanLoai" value="Mua sắm">
-                        `;
-                        container.appendChild(itemBox);
-                    });
-                } else {
-                    // Nếu AI không đọc được hạng mục nào thì chèn 1 ô trống
-                    addItem(); 
-                }
+                    result.hang_muc.forEach(item => addItem(item));
+                } else { addItem(); }
                 
-                alert("✅ AI đã quét và điền dữ liệu thành công! Hãy kiểm tra lại trước khi gửi.");
+                alert("✅ AI đã quét thành công! Hãy kiểm tra lại kết quả Phân loại trước khi gửi.");
             })
             .catch(err => {
                 scanStatus.style.display = "none";
                 btnScan.disabled = false;
-                alert("❌ Lỗi kết nối đến Server AI: " + err.message);
+                alert("❌ Lỗi kết nối AI: " + err.message);
             });
         };
-        
-        // Kích hoạt việc đọc file
         reader.readAsDataURL(file);
     }
 
-    // ----------------------------------------------------
-    // CÁC HÀM CŨ GIỮ NGUYÊN (Thêm/Gửi dữ liệu)
-    // ----------------------------------------------------
-    function addItem() {
-        // Lấy html mẫu của ô đầu tiên để clone nếu có, nếu container rỗng thì tạo mới
-        let template = `
-            <div class="form-group"><label>Chi tiết công việc (Hãng ghi):</label><input type="text" class="chiTiet" placeholder="VD: SP 10W30"></div>
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group" style="flex: 1;"><label>Số lượng:</label><input type="number" class="soLuong" value="1" step="0.1"></div>
-                <div class="form-group" style="flex: 1;"><label>Tổng tiền:</label><input type="number" class="tongTien" placeholder="VNĐ"></div>
-            </div>
-            <input type="hidden" class="donViTinh" value="Cái">
-            <input type="hidden" class="phanLoai" value="Mua sắm">
-        `;
-        
-        const box = document.createElement('div');
-        box.className = 'item-box';
-        box.innerHTML = template;
-        document.getElementById('itemsContainer').appendChild(box);
-    }
-
-function submitData() {
+    // GỬI DATA LƯU VÀO SHEET (Lấy Data từ Review)
+    function submitData() {
         const statusEl = document.getElementById("status");
-
         const items = [];
+        
         document.querySelectorAll('.item-box').forEach(box => {
             let chiTiet = box.querySelector('.chiTiet').value;
             if (chiTiet) {
@@ -196,16 +301,17 @@ function submitData() {
                     soLuong: box.querySelector('.soLuong').value || 1,
                     tongTien: box.querySelector('.tongTien').value || 0,
                     donViTinh: box.querySelector('.donViTinh').value,
-                    phanLoai: box.querySelector('.phanLoai').value
+                    phanLoai: box.querySelector('.phanLoai').value,
+                    // Lấy chính xác dữ liệu người dùng đã chỉnh ở Dropdown
+                    heThong: box.querySelector('.map-heThong').value || "Chưa phân loại",
+                    hangMuc: box.querySelector('.map-hangMuc').value || "Chưa phân loại",
+                    loaiVatTu: box.querySelector('.map-loaiVatTu').value || "Chưa phân loại"
                 });
             }
         });
 
-        if (items.length === 0) {
-            alert("Vui lòng nhập ít nhất 1 chi tiết công việc!"); return;
-        }
+        if (items.length === 0) { alert("Vui lòng nhập ít nhất 1 chi tiết công việc!"); return; }
 
-        // Bổ sung action: "save" để Backend biết cần phải lưu dữ liệu
         const payload = {
             action: "save", 
             bienSo: document.getElementById('bienSo').value,
@@ -216,7 +322,7 @@ function submitData() {
         };
 
         statusEl.style.color = "#1f4e78";
-        statusEl.innerText = "⏳ Đang gửi và đối chiếu dữ liệu...";
+        statusEl.innerText = "⏳ Đang lưu dữ liệu...";
 
         fetch(GAS_URL, {
             method: 'POST',
@@ -224,23 +330,19 @@ function submitData() {
         })
         .then(res => res.json())
         .then(data => {
-            // Kiểm tra trạng thái thực sự từ server trả về
             if(data.status === "success") {
                 statusEl.style.color = "green";
-                statusEl.innerText = "✅ Thành công! Dữ liệu đã được ghi vào Sheet.";
-                // Reset form
+                statusEl.innerText = "✅ Thành công! Dữ liệu đã được lưu.";
                 document.querySelectorAll('input:not([type="hidden"])').forEach(input => input.value = '');
                 document.getElementById('itemsContainer').innerHTML = '';
                 addItem(); 
             } else {
                 statusEl.style.color = "red";
-                statusEl.innerText = "❌ Lỗi từ server: " + data.message;
+                statusEl.innerText = "❌ Lỗi: " + data.message;
             }
-        })
-        .catch(err => {
+        }).catch(err => {
             statusEl.style.color = "red";
-            statusEl.innerText = "❌ Lỗi kết nối đến Google Sheets.";
-            console.error(err);
+            statusEl.innerText = "❌ Lỗi kết nối Google Sheets.";
         });
     }
 </script>
