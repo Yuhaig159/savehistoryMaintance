@@ -3,37 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Cập Nhật Bảo Dưỡng</title>
+    <title>Agent Cập Nhật Bảo Dưỡng - Trạm Kiểm Duyệt</title>
     <style>
-        body { font-family: system-ui, sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center;}
-        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #1f4e78; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .item-box { border: 1px dashed #1f4e78; padding: 15px; margin-bottom: 15px; background: #f8fbff; border-radius: 5px;}
+        body { font-family: system-ui, sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 800px; } /* Mở rộng form để dễ nhìn review */
         
-        /* Cải tiến UI cho tính năng mới */
-        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .btn-delete { background: #e53e3e; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; margin: 0; }
-        .btn-delete:hover { background: #c53030; }
+        .form-group { margin-bottom: 15px; flex: 1; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #1f4e78; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
+        input:focus { border-color: #1f4e78; outline: none; box-shadow: 0 0 0 2px rgba(31,78,120,0.2); }
         
-        .mapping-box { background: #eef2f5; padding: 12px; border-radius: 5px; margin-top: 15px; border: 1px solid #cdd4db; }
-        .map-label { font-size: 12px; font-weight: bold; color: #555; }
-        .btn-add-map { background: #17a2b8; color: white; border: none; padding: 8px; width: 100%; border-radius: 4px; font-size: 13px; margin-top: 10px; cursor: pointer; transition: 0.2s;}
-        .btn-add-map:hover { background: #138496; }
-        .btn-add-map:disabled { background: #a0aec0; cursor: not-allowed; }
-
-        button { background: #1f4e78; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 10px; transition: 0.2s;}
+        /* Box chứa từng hạng mục công việc */
+        .item-box { border: 2px solid #e2e8f0; padding: 15px; margin-bottom: 20px; background: #fff; border-radius: 8px; position: relative;}
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .item-title { font-weight: bold; color: #2d3748; }
+        
+        /* Box Review Mapping */
+        .mapping-box { background: #f8fbff; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px dashed #90cdf4; }
+        .mapping-title { font-size: 13px; color: #2b6cb0; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 5px;}
+        .flex-row { display: flex; gap: 12px; }
+        
+        /* Cảnh báo khi chưa có dữ liệu mapping */
+        .warning-input { background-color: #fefcbf; border-color: #d69e2e !important; }
+        
+        button { background: #1f4e78; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 5px; cursor: pointer; transition: 0.2s; font-weight: bold;}
         button:hover { background: #2b6cb0; }
         button:disabled { background: #a0aec0; cursor: not-allowed; }
-        .btn-add { background: #48bb78; }
+        
+        .btn-add { background: #48bb78; margin-bottom: 15px; }
         .btn-add:hover { background: #38a169; }
-        .btn-scan { background: #e67e22; }
+        .btn-scan { background: #e67e22; margin-top: 15px;}
         .btn-scan:hover { background: #d35400; }
+        .btn-delete { background: #fc8181; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; margin: 0; }
+        .btn-delete:hover { background: #e53e3e; }
+        .btn-add-map { background: #ed8936; color: white; border: none; padding: 8px; width: auto; border-radius: 4px; font-size: 13px; margin-top: 10px; cursor: pointer; }
+        .btn-add-map:hover { background: #dd6b20; }
+        
         #status, #scanStatus { margin-top: 15px; text-align: center; font-weight: bold; }
         
-        .upload-section { border: 2px dashed #1f4e78; padding: 20px; text-align: center; border-radius: 8px; background: #eef2f5; margin-bottom: 20px; }
-        .upload-section input[type="file"] { border: none; padding: 0; background: transparent; }
+        .upload-section { border: 2px dashed #1f4e78; padding: 20px; text-align: center; border-radius: 8px; background: #eef2f5; margin-bottom: 25px; }
+        .upload-section input[type="file"] { border: none; padding: 0; background: transparent; font-size: 15px; }
     </style>
 </head>
 <body>
@@ -43,44 +52,50 @@
 <datalist id="loaiVatTuList"></datalist>
 
 <div class="card">
-    <h2 style="text-align: center; color: #1f4e78;">📝 NHẬP PHIẾU BẢO DƯỠNG</h2>
+    <h2 style="text-align: center; color: #1f4e78;">📝 TRẠM QUÉT & KIỂM DUYỆT BẢO DƯỠNG</h2>
     
     <div class="upload-section">
-        <label>Tải lên Báo giá / Hóa đơn (PDF hoặc Ảnh):</label>
+        <label style="font-size: 16px;">📥 Tải lên Báo giá / Hóa đơn (PDF hoặc Ảnh):</label>
         <input type="file" id="fileInput" accept=".pdf, image/*">
-        <button class="btn-scan" id="btnScan" onclick="scanDocument()">✨ QUÉT TỰ ĐỘNG BẰNG AI</button>
-        <div id="scanStatus" style="display: none; color: #e67e22;">⏳ AI đang đọc dữ liệu, vui lòng đợi 5-10 giây...</div>
+        <button class="btn-scan" id="btnScan" onclick="scanDocument()">✨ BƯỚC 1: QUÉT & TỰ ĐỘNG ÁNH XẠ (AI)</button>
+        <div id="scanStatus" style="display: none; color: #e67e22;">⏳ AI đang bóc tách và đối chiếu dữ liệu Mapping, vui lòng đợi...</div>
     </div>
     
-    <div class="form-group"><label>Biển Số Xe:</label><input type="text" id="bienSo" placeholder="VD: 51K - 529.01"></div>
-    <div class="form-group"><label>Đơn Vị Thực Hiện:</label><input type="text" id="donVi" placeholder="VD: Toyota Tân Cảng"></div>
-    <div style="display: flex; gap: 10px;">
-        <div class="form-group" style="flex: 1;"><label>Ngày:</label><input type="date" id="ngay"></div>
-        <div class="form-group" style="flex: 1;"><label>Số Km:</label><input type="number" id="soKm" placeholder="VD: 55000"></div>
+    <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        <h4 style="margin-top: 0; color: #4a5568; border-bottom: 1px solid #cbd5e0; padding-bottom: 5px;">Thông tin chung</h4>
+        <div class="flex-row">
+            <div class="form-group"><label>Biển Số Xe:</label><input type="text" id="bienSo" placeholder="VD: 51K - 529.01"></div>
+            <div class="form-group"><label>Đơn Vị Thực Hiện:</label><input type="text" id="donVi" placeholder="VD: Toyota Tân Cảng"></div>
+        </div>
+        <div class="flex-row">
+            <div class="form-group"><label>Ngày:</label><input type="date" id="ngay"></div>
+            <div class="form-group"><label>Số Km:</label><input type="number" id="soKm" placeholder="VD: 55000"></div>
+        </div>
     </div>
 
-    <hr>
+    <h4 style="color: #4a5568; border-bottom: 2px solid #1f4e78; padding-bottom: 5px;">Danh sách Chi tiết (Review trước khi lưu)</h4>
     <div id="itemsContainer">
         </div>
     
-    <button class="btn-add" onclick="addItem()">+ Thêm dòng chi tiết mới</button>
-    <button onclick="submitData()">🚀 GỬI DỮ LIỆU LÊN HỆ THỐNG</button>
+    <button class="btn-add" onclick="addItem()">+ Thêm dòng thủ công</button>
+    <button onclick="submitData()">🚀 BƯỚC 2: XÁC NHẬN ĐÚNG & LƯU VÀO SHEET DATA</button>
     <div id="status"></div>
 </div>
 
 <script>
+    // DÁN ĐƯỜNG LINK WEB APP CỦA BẠN VÀO ĐÂY
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwLJldZEMrWFq13VyJ24rFuyxwp47hM4GzciSSr_rbCJlgkisTkSoeiVv_ggzKos79o/exec";
     
-    // Lưu trữ CSDL Mapping tải từ Google Sheets
+    // Biến lưu trữ từ điển Mapping
     let dictRules = []; 
 
-    // CHẠY NGAY KHI MỞ WEB: Tải dữ liệu Mapping
+    // TẢI TỪ ĐIỂN MAPPING NGAY KHI MỞ WEB
     window.onload = function() {
         document.getElementById('itemsContainer').innerHTML = ''; 
         addItem(); // Tạo sẵn 1 dòng trống
         
         const statusEl = document.getElementById("status");
-        statusEl.innerText = "⏳ Đang tải dữ liệu Mapping từ hệ thống...";
+        statusEl.innerText = "⏳ Đang kết nối và tải cơ sở dữ liệu Mapping...";
         statusEl.style.color = "#e67e22";
         
         fetch(GAS_URL, {
@@ -91,62 +106,74 @@
         .then(data => {
             if(data.status === "success") {
                 dictRules = data.data.rules || [];
-                dictRules.sort((a, b) => b.keyword.length - a.keyword.length); // Ưu tiên từ dài
+                // Sắp xếp từ khóa dài lên trước để match chính xác hơn
+                dictRules.sort((a, b) => b.keyword.length - a.keyword.length); 
                 populateDatalists(dictRules);
                 statusEl.innerText = "";
             }
         })
         .catch(err => {
-            statusEl.innerText = "⚠️ Chưa kết nối được CSDL Mapping (Hãy cập nhật Backend).";
+            statusEl.innerText = "⚠️ Chưa lấy được dữ liệu Mapping từ Sheets.";
         });
     };
 
-    // Hàm cập nhật các lựa chọn Dropdown
+    // ĐỔ DỮ LIỆU VÀO DROPDOWN
     function populateDatalists(rules) {
-        let heThongSet = new Set();
-        let hangMucSet = new Set();
-        let loaiVatTuSet = new Set();
-
+        let heThongSet = new Set(), hangMucSet = new Set(), loaiVatTuSet = new Set();
         rules.forEach(r => {
-            if(r.heThong && r.heThong !== "Chưa phân loại") heThongSet.add(r.heThong);
-            if(r.hangMuc && r.hangMuc !== "Chưa phân loại") hangMucSet.add(r.hangMuc);
-            if(r.loaiVatTu && r.loaiVatTu !== "Chưa phân loại") loaiVatTuSet.add(r.loaiVatTu);
+            if(r.heThong) heThongSet.add(r.heThong);
+            if(r.hangMuc) hangMucSet.add(r.hangMuc);
+            if(r.loaiVatTu) loaiVatTuSet.add(r.loaiVatTu);
         });
-
         document.getElementById('heThongList').innerHTML = [...heThongSet].map(v => `<option value="${v}">`).join('');
         document.getElementById('hangMucList').innerHTML = [...hangMucSet].map(v => `<option value="${v}">`).join('');
         document.getElementById('loaiVatTuList').innerHTML = [...loaiVatTuSet].map(v => `<option value="${v}">`).join('');
     }
 
-    // Hàm tự động Mapping nội bộ trên Frontend
+    // LOGIC TỰ ĐỘNG ÁNH XẠ TRÊN GIAO DIỆN
     function autoMap(keyword) {
-        if(!keyword) return { heThong: "Chưa phân loại", hangMuc: "Chưa phân loại", loaiVatTu: "Chưa phân loại" };
-        keyword = keyword.toLowerCase().trim();
+        if(!keyword) return { heThong: "", hangMuc: "", loaiVatTu: "" };
+        let lowerKw = keyword.toLowerCase().trim();
         for(let r of dictRules) {
-            if(keyword.includes(r.keyword)) {
+            if(lowerKw.includes(r.keyword)) {
                 return { heThong: r.heThong, hangMuc: r.hangMuc, loaiVatTu: r.loaiVatTu };
             }
         }
-        return { heThong: "Chưa phân loại", hangMuc: "Chưa phân loại", loaiVatTu: "Chưa phân loại" };
+        // Trả về rỗng nếu không tìm thấy để bôi vàng cảnh báo người dùng
+        return { heThong: "", hangMuc: "", loaiVatTu: "" };
     }
 
-    // Cập nhật lại UI khi người dùng gõ tay
+    // XỬ LÝ KHI NGƯỜI DÙNG GÕ TAY VÀO Ô "CHI TIẾT"
     function handleTypingChiTiet(inputEl) {
         const box = inputEl.closest('.item-box');
         const mapped = autoMap(inputEl.value);
         
-        box.querySelector('.map-heThong').value = mapped.heThong;
-        box.querySelector('.map-hangMuc').value = mapped.hangMuc;
-        box.querySelector('.map-loaiVatTu').value = mapped.loaiVatTu;
+        const htInput = box.querySelector('.map-heThong');
+        const hmInput = box.querySelector('.map-hangMuc');
+        const vtInput = box.querySelector('.map-loaiVatTu');
         
-        // Reset nút lưu mapping
-        const btnMap = box.querySelector('.btn-add-map');
-        btnMap.innerText = "💾 Thêm từ khóa này vào CSDL Mapping";
-        btnMap.style.background = "#17a2b8";
-        btnMap.disabled = false;
+        htInput.value = mapped.heThong;
+        hmInput.value = mapped.hangMuc;
+        vtInput.value = mapped.loaiVatTu;
+        
+        // Kiểm tra và bôi màu cảnh báo
+        checkWarning(htInput); checkWarning(hmInput); checkWarning(vtInput);
+        
+        // Hiện nút Lưu mapping nếu người dùng muốn lưu quy tắc mới
+        box.querySelector('.btn-add-map').style.display = 'inline-block';
     }
 
-    // THÊM DÒNG MỚI (Hỗ trợ nhúng data từ AI)
+    // HÀM KIỂM TRA ĐỂ BÔI MÀU CẢNH BÁO
+    function checkWarning(el) {
+        if(el.value.trim() === "") {
+            el.classList.add("warning-input");
+            el.placeholder = "⚠️ Chọn/Nhập dữ liệu";
+        } else {
+            el.classList.remove("warning-input");
+        }
+    }
+
+    // THÊM 1 DÒNG VÀO BẢNG (Dùng cho cả tạo thủ công và AI nhúng vào)
     function addItem(itemData = null) {
         const container = document.getElementById('itemsContainer');
         const box = document.createElement('div');
@@ -157,37 +184,40 @@
         const tongTien = itemData ? (soLuong * (itemData.gia || 0)) : '';
         const donVi = itemData ? (itemData.dv || 'Cái') : 'Cái';
         
+        // Chạy Logic Mapping lập tức
         let mapped = autoMap(chiTiet);
 
         box.innerHTML = `
             <div class="item-header">
-                <label style="margin: 0;">Chi tiết công việc (Hãng ghi):</label>
-                <button type="button" class="btn-delete" onclick="this.closest('.item-box').remove()">❌ Xóa dòng</button>
+                <span class="item-title">🔹 Nội dung Hãng ghi</span>
+                <button type="button" class="btn-delete" onclick="this.closest('.item-box').remove()">🗑️ Bỏ hạng mục này</button>
             </div>
-            <input type="text" class="chiTiet" value="${chiTiet}" placeholder="VD: SP 10W30" oninput="handleTypingChiTiet(this)">
             
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <div class="form-group" style="flex: 1; margin: 0;"><label>Số lượng:</label><input type="number" class="soLuong" value="${soLuong}" step="0.1"></div>
-                <div class="form-group" style="flex: 1; margin: 0;"><label>Tổng tiền:</label><input type="number" class="tongTien" value="${tongTien}" placeholder="VNĐ"></div>
+            <div class="form-group"><input type="text" class="chiTiet" value="${chiTiet}" placeholder="VD: Nhớt máy 5W-30" oninput="handleTypingChiTiet(this)"></div>
+            <div class="flex-row">
+                <div class="form-group"><label>Số lượng:</label><input type="number" class="soLuong" value="${soLuong}" step="0.1"></div>
+                <div class="form-group"><label>Tổng tiền:</label><input type="number" class="tongTien" value="${tongTien}" placeholder="VNĐ"></div>
             </div>
 
             <div class="mapping-box">
-                <div style="font-size: 13px; color: #1f4e78; font-weight: bold; margin-bottom: 8px;">🔍 Kết quả Phân loại (Sửa & Chọn qua Dropdown):</div>
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="flex: 1; margin: 0;">
-                        <label class="map-label">Hệ thống</label>
-                        <input type="text" class="map-heThong" list="heThongList" value="${mapped.heThong}" placeholder="Chọn/Nhập">
+                <div class="mapping-title">🔍 Kết quả Ánh xạ vào Hệ thống:</div>
+                <div class="flex-row">
+                    <div class="form-group">
+                        <label>Hệ thống</label>
+                        <input type="text" class="map-heThong ${mapped.heThong ? '' : 'warning-input'}" list="heThongList" value="${mapped.heThong}" placeholder="Chọn/Nhập" onchange="checkWarning(this)">
                     </div>
-                    <div class="form-group" style="flex: 1; margin: 0;">
-                        <label class="map-label">Tên hạng mục</label>
-                        <input type="text" class="map-hangMuc" list="hangMucList" value="${mapped.hangMuc}" placeholder="Chọn/Nhập">
+                    <div class="form-group">
+                        <label>Tên hạng mục</label>
+                        <input type="text" class="map-hangMuc ${mapped.hangMuc ? '' : 'warning-input'}" list="hangMucList" value="${mapped.hangMuc}" placeholder="Chọn/Nhập" onchange="checkWarning(this)">
                     </div>
-                    <div class="form-group" style="flex: 1; margin: 0;">
-                        <label class="map-label">Loại vật tư</label>
-                        <input type="text" class="map-loaiVatTu" list="loaiVatTuList" value="${mapped.loaiVatTu}" placeholder="Chọn/Nhập">
+                    <div class="form-group">
+                        <label>Loại vật tư</label>
+                        <input type="text" class="map-loaiVatTu ${mapped.loaiVatTu ? '' : 'warning-input'}" list="loaiVatTuList" value="${mapped.loaiVatTu}" placeholder="Chọn/Nhập" onchange="checkWarning(this)">
                     </div>
                 </div>
-                <button type="button" class="btn-add-map" onclick="addNewMapping(this)">💾 Thêm từ khóa này vào CSDL Mapping</button>
+                <div style="text-align: right;">
+                    <button type="button" class="btn-add-map" onclick="addNewMapping(this)">💾 Dạy AI: Lưu từ khóa này vào Mapping</button>
+                </div>
             </div>
 
             <input type="hidden" class="donViTinh" value="${donVi}">
@@ -196,7 +226,7 @@
         container.appendChild(box);
     }
 
-    // LƯU TỪ KHÓA MỚI VÀO SHEET MAPPING
+    // CHỨC NĂNG: NẠP TỪ KHÓA MỚI VÀO MAPPING SHEET
     function addNewMapping(btn) {
         const box = btn.closest('.item-box');
         const keyword = box.querySelector('.chiTiet').value.trim();
@@ -204,9 +234,12 @@
         const hangMuc = box.querySelector('.map-hangMuc').value.trim();
         const loaiVatTu = box.querySelector('.map-loaiVatTu').value.trim();
 
-        if(!keyword) { alert("Vui lòng nhập Chi tiết công việc trước khi lưu!"); return; }
+        if(!keyword || !heThong || !hangMuc) { 
+            alert("⚠️ Vui lòng điền đủ Chi tiết công việc, Hệ thống và Tên hạng mục trước khi lưu Mapping!"); 
+            return; 
+        }
         
-        btn.innerText = "⏳ Đang lưu vào hệ thống...";
+        btn.innerText = "⏳ Đang lưu...";
         btn.disabled = true;
 
         fetch(GAS_URL, {
@@ -222,26 +255,31 @@
         .then(r => r.json())
         .then(res => {
             if(res.status === "success") {
-                btn.innerText = "✅ Đã lưu vào Sheet Mapping thành công";
-                btn.style.background = "#28a745";
+                btn.innerText = "✅ Đã lưu vào Cơ sở dữ liệu Mapping";
+                btn.style.background = "#38a169";
                 
-                // Cập nhật mảng nội bộ & Dropdown không cần load lại trang
+                // Cập nhật bộ nhớ tạm
                 dictRules.push({ keyword: keyword.toLowerCase(), heThong, hangMuc, loaiVatTu });
                 dictRules.sort((a, b) => b.keyword.length - a.keyword.length);
                 populateDatalists(dictRules);
+                
+                // Tắt highlight vàng
+                checkWarning(box.querySelector('.map-heThong'));
+                checkWarning(box.querySelector('.map-hangMuc'));
+                checkWarning(box.querySelector('.map-loaiVatTu'));
             } else { throw new Error(res.message); }
         })
         .catch(e => {
-            btn.innerText = "❌ Lỗi: Có thể backend chưa cấu hình add_mapping";
+            btn.innerText = "❌ Lỗi: Chưa kết nối được";
             btn.style.background = "#e53e3e";
             btn.disabled = false;
         });
     }
 
-    // QUÉT TÀI LIỆU
+    // QUÉT TÀI LIỆU BẰNG AI
     function scanDocument() {
         const fileInput = document.getElementById('fileInput');
-        if (fileInput.files.length === 0) { alert("Vui lòng chọn file!"); return; }
+        if (fileInput.files.length === 0) { alert("Vui lòng chọn file trước khi bấm quét!"); return; }
 
         const file = fileInput.files[0];
         const scanStatus = document.getElementById('scanStatus');
@@ -271,13 +309,16 @@
                 document.getElementById('soKm').value = result.header.so_km || '';
 
                 const container = document.getElementById('itemsContainer');
-                container.innerHTML = ''; 
+                container.innerHTML = ''; // Làm sạch các ô hiện tại
                 
                 if (result.hang_muc && result.hang_muc.length > 0) {
+                    // Gọi hàm addItem để render từng ô và kích hoạt Auto-Mapping lập tức
                     result.hang_muc.forEach(item => addItem(item));
-                } else { addItem(); }
+                } else { 
+                    addItem(); 
+                }
                 
-                alert("✅ AI đã quét thành công! Hãy kiểm tra lại kết quả Phân loại trước khi gửi.");
+                alert("✅ AI đã quét xong! Các ô bôi VÀNG là các hạng mục AI chưa biết phân loại. Vui lòng kiểm tra và sửa lại trước khi gửi lưu.");
             })
             .catch(err => {
                 scanStatus.style.display = "none";
@@ -288,7 +329,7 @@
         reader.readAsDataURL(file);
     }
 
-    // GỬI DATA LƯU VÀO SHEET (Lấy Data từ Review)
+    // GỬI DATA CUỐI CÙNG LƯU VÀO SHEET (Lấy Data chính xác từ Review)
     function submitData() {
         const statusEl = document.getElementById("status");
         const items = [];
@@ -302,7 +343,7 @@
                     tongTien: box.querySelector('.tongTien').value || 0,
                     donViTinh: box.querySelector('.donViTinh').value,
                     phanLoai: box.querySelector('.phanLoai').value,
-                    // Lấy chính xác dữ liệu người dùng đã chỉnh ở Dropdown
+                    // Lấy chính xác dữ liệu từ form kiểm duyệt
                     heThong: box.querySelector('.map-heThong').value || "Chưa phân loại",
                     hangMuc: box.querySelector('.map-hangMuc').value || "Chưa phân loại",
                     loaiVatTu: box.querySelector('.map-loaiVatTu').value || "Chưa phân loại"
@@ -310,7 +351,7 @@
             }
         });
 
-        if (items.length === 0) { alert("Vui lòng nhập ít nhất 1 chi tiết công việc!"); return; }
+        if (items.length === 0) { alert("Vui lòng có ít nhất 1 chi tiết công việc để lưu!"); return; }
 
         const payload = {
             action: "save", 
@@ -322,7 +363,7 @@
         };
 
         statusEl.style.color = "#1f4e78";
-        statusEl.innerText = "⏳ Đang lưu dữ liệu...";
+        statusEl.innerText = "⏳ Đang ghi dữ liệu vào Google Sheets...";
 
         fetch(GAS_URL, {
             method: 'POST',
@@ -332,7 +373,8 @@
         .then(data => {
             if(data.status === "success") {
                 statusEl.style.color = "green";
-                statusEl.innerText = "✅ Thành công! Dữ liệu đã được lưu.";
+                statusEl.innerText = "✅ HOÀN TẤT! Dữ liệu của bạn đã được lưu chuẩn xác vào Sheet.";
+                // Xóa trắng form để làm xe tiếp theo
                 document.querySelectorAll('input:not([type="hidden"])').forEach(input => input.value = '');
                 document.getElementById('itemsContainer').innerHTML = '';
                 addItem(); 
